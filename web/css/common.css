@@ -1,0 +1,68 @@
+body {
+    min-height: 2000px;
+    font-size: 18px;
+}
+
+.large-text {
+    font-size: 200%;
+}
+
+.list-group-item {
+    padding-bottom: 20px;
+}
+
+.courses {
+    font-size: 32px;
+}
+
+.course-name {
+    padding: 10px;
+}
+
+.course-info {
+    font-size: 26px;
+    padding-left: 32px;
+    padding-bottom: 16px;
+}
+
+.course-list {
+    padding-left: 16px
+}
+
+.course-coordinators {
+    padding-left: 32px;
+}
+
+.alias-course {
+    padding-left: 32px;
+    padding-top: 8px;
+}
+
+.alias-course-info {
+    padding-left: 32px;
+    padding-top: 8px;
+}
+
+.index-page-body {
+    padding-top: 10px;
+}
+
+.add-new-alias {
+    font-size: 80%;
+}
+
+.add-new-alias::before {
+    content: "["
+}
+
+.add-new-alias::after {
+    content: "]"
+}
+
+.delete-admin {
+    margin-left: 12px;
+}
+
+.new-admin {
+    margin-bottom: 10px;
+}

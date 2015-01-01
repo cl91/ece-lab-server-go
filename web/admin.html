@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/jquery.dialog.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li class="active"><a href="admin.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+	    <div class="jumbotron">
+		<div class="lead large-text text-center">All Administrators</div>
+		<button class="btn btn-lg btn-primary new-admin" id="new-admin">Add Admin</button>
+		<div id="error"></div>
+		<ul class="list-group lead" id="admin-list"></ul>
+	    </div>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.dialog.js"></script>
+
+	<script>
+	 $.ajax({
+	     url : 'api/admin/get',
+	     type : 'POST',
+	     dataType : 'json',
+	     success : function(data) {
+		 for (var i = 0; i < data.length; i++) {
+		     var obj = data[i]
+		     var name = obj.name
+		     var fullname = obj.fullname ? obj.fullname : name
+		     var courses = obj.courses
+		     var html = '<li class="list-group-item">' + fullname + ' (' + name + ')'
+		     + '<button class="btn btn-small btn-danger delete-admin" id="delete-'
+		     + name + '">Delete</button>'
+		     html += '<div class="course-list">Courses: '
+		     if (courses.length) {
+			 html += courses[0].toUpperCase()
+			 if (courses.length > 1) {
+			     for (var h = 1; h < courses.length; h++) {
+				 html += ', ' + courses[h].toUpperCase()
+			     }
+			 }
+		     }
+		     html += '</div></li>'
+		     $('#admin-list').append(html)
+		     $("button[id='delete-"+name+"']").click(function(name) {
+			 return function() {
+			     $.dialog.confirm("Delete Admin",
+					      "<p>Do you really want to delete admin "+name
+					      + "?</p><p>This cannot be reverted.</p>", function() {
+						  $.ajax({
+						      url : 'api/admin/del?name='+encodeURI(name),
+						      type : 'POST',
+						      success : function() {
+							  location.reload();
+						      },
+						      error : function(jqxhr, status, error) {
+							  $.dialog.alert("Error",
+									 "Failed to delete admin "
+									 +name+": " + jqxhr.responseText);
+						      }
+						  })
+					      })
+			 }
+		     }(name))
+		 }
+	     },
+	     error : function(jqxhr, status, error) {
+		 if (error) {
+		     if (error == "Unauthorized") {
+			 document.location = "login.html"
+		     }
+		 }
+		 $('#error').text('Failed to get admin info: ' + jqxhr.responseText)
+	     }
+	 })
+	</script>
+
+	<script>
+	 $('#new-admin').click(function() {
+	     document.location = "new-admin.html"
+	 })
+	</script>
+    </body>
+</html>

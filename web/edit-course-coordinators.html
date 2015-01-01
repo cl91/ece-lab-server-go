@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a href="#">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="#">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <h1 class="text-center">Edit Course Coordinators for COMPSYS 203</h1>
+
+	    <div class="index-page-body">
+		<div class="lead">
+		    <button class="btn btn-lg btn-primary"
+			    type="button">Add New Course Coordinator</button>
+		</div>
+		<div class="edit-labs-table">
+		    <table class="table table-striped">
+			<thead>
+			    <td>Name</td>
+			    <td>UPI</td>
+			    <td>ID</td>
+			    <td>Email</td>
+			    <td>Edit</td>
+			</thead>
+			<tbody>
+			    <tr>
+				<td>John Smith</td>
+				<td>jsmi273</td>
+				<td>6458763</td>
+				<td>jsmi273@aucklanduni.ac.nz</td>
+				<td>
+				    <button class="btn btn-danger"
+					    type="button">Remove</button>
+				</td>
+			    </tr>
+
+			    <tr>
+				<td>Alan Green</td>
+				<td>agre471</td>
+				<td>6181214</td>
+				<td>agree471@aucklanduni.ac.nz</td>
+				<td>
+				    <button class="btn btn-danger"
+					    type="button">Remove</button>
+				</td>
+			    </tr>
+
+			</tbody>
+		    </table>
+		</div>
+	    </div>
+
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+    </body>
+</html>

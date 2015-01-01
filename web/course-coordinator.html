@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li class="active"><a href="course-coordinator.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+	    <div class="jumbotron">
+		<div class="lead large-text text-center">Courses You Are Administrating</div>
+		<button class="btn btn-lg btn-primary new-admin" id="new-course">Add Course</button>
+		<div id="error"></div>
+		<ul class="list-group courses" id="course-list">
+		</ul>
+	    </div>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/markup.min.js"></script>
+	<script src="js/jquery.dialog.js"></script>
+
+	<script id="course-template" type="text/template">
+	    <li class="list-group-item">
+		<div class="course-name">
+		    {{title}}
+		</div>
+		<div class="course-info">
+		    <button class="btn btn-lg btn-primary edit-labs" data-course="{{name}}"
+			    type="button">Edit Labs</button>
+		</div>
+		<div class="course-info">
+		    <button class="btn btn-lg btn-primary edit-markers" data-course="{{name}}"
+			    type="button">Edit Markers</button>
+		</div>
+		<div class="course-info">
+		    Courses: <a class="add-new-alias" href="new-alias-course.html?course={{name}}">Add New Alias Course</a>
+		    <div class="alias-course">
+			{{name}} <button class="btn btn-small btn-danger delete-admin delete-course"
+				      type="button" data-course="{{name}}">Delete Course</button>
+			<div class="alias-course-info">
+			    <button class="btn btn-lg btn-primary"
+				    type="button">View Sign-offs By Student</button>
+			    <button class="btn btn-lg btn-primary"
+				    type="button">View Sign-offs By Lab</button>
+			</div>
+			<div class="alias-course-info">
+			    <button class="btn btn-lg btn-primary"
+				    type="button">Edit Student List</button>
+			</div>
+		    </div>
+		    
+		    {{aliases}}
+		    <div class="alias-course">
+			{{.}} <button class="btn btn-small btn-danger delete-admin delete-alias"
+				      type="button" data-alias="{{.}}">Delete Alias</button>
+			<div class="alias-course-info">
+			    <button class="btn btn-lg btn-primary"
+				    type="button">View Sign-offs By Student</button>
+			    <button class="btn btn-lg btn-primary"
+				    type="button">View Sign-offs By Lab</button>
+			</div>
+			<div class="alias-course-info">
+			    <button class="btn btn-lg btn-primary"
+				    type="button">Edit Student List</button>
+			</div>
+		    </div>
+		    {{/aliases}}
+		</div>
+	    </li>
+	</script>
+
+	<script>
+	 $('#course-template').hide()
+	 var template = document.getElementById("course-template").firstChild.textContent
+	 $.ajax({
+	     url : 'api/course/get',
+	     type : 'POST',
+	     dataType : 'json',
+	     success : function(data) {
+		 if (data.length) {
+		     data = data.sort(function(a, b) {
+			 if (a.name > b.name) {
+			     return 1
+			 } else {
+			     return -1
+			 }
+		     })
+		     for (var i = 0; i < data.length; i++) {
+			 var obj = { name : data[i].name.toUpperCase(),
+				     aliases : [] }
+			 obj.title = obj.name
+			 if (data[i].aliases.length) {
+			     var al = ' (Aliased with '
+			     for (var j = 0; j < data[i].aliases.length; j++) {
+				 if (j != 0) {
+				     al += ', '
+				 }
+				 if (j > 0 && j == data[i].aliases.length-1) {
+				     al += 'and '
+				 }
+				 var aliase_name = data[i].aliases[j].toUpperCase()
+				 al += aliase_name
+				 obj.aliases[j] = aliase_name
+			     }
+			     al += ')'
+			     obj.title += al
+			 }
+			 $('#course-list').append(Mark.up(template, obj))
+		     }
+		     $('.delete-course').click(function() {
+			 var name = $(this).data('course')
+			 $.dialog.confirm("Delete Course",
+					  "<p>Do you really want to delete course "+name
+					  + "?</p><p>This cannot be reverted.</p>", function() {
+					      $.ajax({
+						  url : 'api/course/'+encodeURI(name.toLowerCase())+'/del',
+						  type : 'POST',
+						  success : function() {
+						      location.reload();
+						  },
+						  error : function(jqxhr, status, error) {
+						      $.dialog.alert("Error",
+								     "Failed to delete course "
+								     +name+": " + jqxhr.responseText);
+						  }
+					      })
+					  })
+		     })
+		     $('.delete-alias').click(function() {
+			 var name = $(this).data('alias')
+			 $.dialog.confirm("Delete Alias Course",
+					  "<p>Do you really want to delete course alias "+name
+					  + "?</p><p>This cannot be reverted.</p>", function() {
+					      $.ajax({
+						  url : 'api/course/del-alias?name=' +
+						     encodeURI(name.toLowerCase()),
+						  type : 'POST',
+						  success : function() {
+						      location.reload();
+						  },
+						  error : function(jqxhr, status, error) {
+						      $.dialog.alert("Error",
+								     "Failed to delete course "
+								     +name+": " + jqxhr.responseText);
+						  }
+					      })
+					  })
+		     })
+		     $('.edit-labs').click(function() {
+			 var course = $(this).data('course')
+			 document.location = 'edit-labs.html?course=' + course
+		     })
+		     $('.edit-markers').click(function() {
+			 var course = $(this).data('course')
+			 document.location = 'edit-markers.html?course=' + course
+		     })
+		 }
+	     },
+	     error : function(jqxhr, status, error) {
+		 if (error) {
+		     if (error == "Unauthorized") {
+			 document.location = "login.html"
+		     }
+		 }
+		 $('#error').text('Failed to get course info: ' + jqxhr.responseText)
+	     }
+	 })
+	</script>
+
+	<script>
+	</script>
+
+	<script>
+	 $('#new-course').click(function() {
+	     document.location = "new-course.html"
+	 })
+	</script>
+    </body>
+</html>

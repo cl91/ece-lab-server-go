@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a href="admin.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <div class="jumbotron">
+		<div class="lead large-text text-center">Add New Course</div>
+		<form class="form-signin text-center" role="form" id="new-admin">
+		    <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-2">
+			    <label for="name">Course Name</label>
+			</div>
+			<div class="col-md-5">
+			    <input type="text" id="name" class="form-control" name="name" required autofocus>
+			</div>
+		    </div>
+		    <div class="row small" style="margin-top:10px">
+			<div class="col-md-2"></div>
+			<div class="text-center col-md-7">
+			    Note: To add/update student list to this course, go back to the main admin page.
+			    Under the 'Courses' list of your new course, click 'Edit Student List'.
+			</div>
+			<div class="col-md-3"></div>
+		    </div>
+		    <label id="error"></label>
+		    <div class="row">
+			<div class="col-md-6"></div>
+			<div class="col-md-2">
+			    <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+			</div>
+		    </div>
+		</form>
+	    </div>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.form.js"></script>
+
+	<script>
+	 $('#new-admin').ajaxForm({
+	     beforeSubmit : function showRequest(form_data) {
+		 var query = $.param(form_data)
+		 var url = 'api/course/new?' + query.toLowerCase()
+		 $.ajax({
+		     url : url,
+		     type : 'POST',
+		     success : function() {
+			 document.location = "course-coordinator.html"
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Failed to add new course: ' + jqxhr.responseText)
+		     }
+		 })
+		 return false
+	     },
+	 })
+	</script>
+    </body>
+</html>

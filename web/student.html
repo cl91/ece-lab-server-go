@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li class="active"><a href="#">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="#">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+	    <div class="jumbotron">
+		<div class="lead large-text text-center">Upload Your Solutions</div>
+
+		<ul class="list-group courses">
+		    <li class="list-group-item">
+			<div class="course-name">
+			    Lab 1 - Week 1 - COMPSYS 203
+			</div>
+			<div class="course-info">
+			    <table class="table">
+				<thead>
+				    <td>Attempt</td>
+				    <td>File</td>
+				    <td>Marked</td>
+				    <td>Mark</td>
+				</thead>
+				<tbody>
+				    <tr class="success">
+					<td>1</td>
+					<td><a href="#">upload.zip</a></td>
+					<td>Yes</td>
+					<td><a href="#">5 (Details)</a></td>
+				    </tr>
+				    <tr class="danger">
+					<td>2</td>
+					<td><a href="#">upload2.zip</a></td>
+					<td>No</td>
+					<td>0</td>
+				    </tr>
+				</tbody>
+			    </table>
+			    <button class="btn btn-lg btn-primary"
+				    type="button">Upload</button>
+			</div>
+		    </li>
+
+		</ul>
+	    </div>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+    </body>
+</html>

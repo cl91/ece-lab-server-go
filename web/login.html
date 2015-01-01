@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/login.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<div class="container">
+
+	    <h1 class="text-center">ECE Lab Management System</h1>
+
+	    <form class="form-signin" role="form" id="login">
+		<h2 class="form-signin-heading">Please log in</h2>
+		<label for="name" class="sr-only">Username</label>
+		<input type="text" id="name" class="form-control" name="name"
+		       placeholder="Username" required autofocus>
+		<label for="pass" class="sr-only">Password</label>
+		<input type="password" id="pass" class="form-control" name="pass"
+		       placeholder="Password" required>
+		<label id="error"></label>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Log in</button>
+	    </form>
+
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.form.js"></script>
+	<script>
+	 $('#error').hide()
+	 $('#login').ajaxForm({
+	     beforeSubmit : function showRequest(form_data) {
+		 var query = $.param(form_data)
+		 var url = 'api/auth?' + query
+		 $.ajax({
+		     url : url,
+		     type : 'POST',
+		     dataType : 'json',
+		     success : function(data) {
+			 if (data.type == 'superadmin') {
+			     document.location = 'admin.html'
+			 } else if (data.type == 'admin') {
+			     document.location = 'course-coordinator.html'
+			 } else {
+			     $('#error').show()
+			     $('#error').text('Login failed: unknown user type')
+			 }
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').show()
+			 $('#error').text('Login failed: ' + error)
+		     }
+		 })
+		 return false
+	     },
+	 })
+	</script>
+    </body>
+</html>

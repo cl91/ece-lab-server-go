@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a href="course-coordinator.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <h1 class="text-center" id="title">Edit Labs</h1>
+
+	    <div class="index-page-body">
+		<div class="lead">
+		    <button class="btn btn-lg btn-primary"
+			    type="button">Add New Lab</button>
+		</div>
+		<div class="edit-labs-table">
+		    <table class="table table-striped">
+			<thead>
+			    <td>Name</td>
+			    <td>Week</td>
+			    <td>Date</td>
+			    <td>Marking Starts</td>
+			    <td>Marking Ends</td>
+			    <td>Marking</td>
+			    <td>Edit</td>
+			</thead>
+			<tbody>
+			    <tr>
+				<td>Lab 1</td>
+				<td>Week 1</td>
+				<td>22/11/2014 10:00</td>
+				<td>22/11/2014 10:00</td>
+				<td>23/11/2014 10:00</td>
+				<td>Number-based out of 5</td>
+				<td>
+				    <button class="btn btn-primary"
+					    type="button">Edit</button>
+				    <button class="btn btn-disabled"
+					    type="button">Remove</button>
+				</td>
+			    </tr>
+
+			    <tr>
+				<td>Lab 2</td>
+				<td>Week 2</td>
+				<td>28/11/2014 10:00</td>
+				<td>28/11/2014 10:00</td>
+				<td>29/11/2014 10:00</td>
+				<td>Criteria-based out of 5</td>
+				<td>
+				    <button class="btn btn-primary"
+					    type="button">Edit</button>
+				    <button class="btn btn-danger"
+					    type="button">Remove</button>
+				</td>
+			    </tr>
+
+			    <tr>
+				<td>Lab 3</td>
+				<td>Week 3</td>
+				<td>5/12/2014 10:00</td>
+				<td>5/12/2014 10:00</td>
+				<td>6/12/2014 10:00</td>
+				<td>Criteria-based out of 5</td>
+				<td>
+				    <button class="btn btn-primary"
+					    type="button">Edit</button>
+				    <button class="btn btn-danger"
+					    type="button">Remove</button>
+				</td>
+			    </tr>
+
+			</tbody>
+		    </table>
+		</div>
+	    </div>
+
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+
+	<script>
+	 function get_parameter_by_name(name) {
+	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+             results = regex.exec(location.search);
+	     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	 }
+
+	 var course = get_parameter_by_name('course')
+	 var title = 'Edit Labs for ' + course
+	 $('#title').text(title)
+	</script>
+
+    </body>
+    </body>
+</html>
