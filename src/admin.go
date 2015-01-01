@@ -6,7 +6,7 @@ import (
 )
 
 func AdminHandler(req Request) Response {
-	if !is_admin_user(req) {
+	if !is_superadmin_user(req) {
 		return Response { code : Unauthorised, msg : "Access denied" }
 	}
 	mux := make(Mux)
@@ -98,7 +98,7 @@ func GetAdminHandler(req Request) Response {
 	return Response { msg: string(reply) }
 }
 
-func is_admin_user(req Request) bool {
+func is_superadmin_user(req Request) bool {
 	reply, _ := req.db.Sismember("superadmins", req.user)
 	return reply
 }
