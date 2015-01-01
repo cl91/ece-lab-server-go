@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/", MuxHandler)
+	http.HandleFunc("/", MainHandler)
 	http.ListenAndServe(":4000", nil)
 }

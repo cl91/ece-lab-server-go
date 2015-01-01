@@ -5,19 +5,23 @@ import (
 	"strings"
 	"net/url"
 	"net/http"
+	"./redis"
 )
 
 type Request struct {
 	api string
 	ops string
 	param string
+	user string
 	query map[string] []string
+	cookies []*http.Cookie
+	db redis.Client
 }
 
 type Status int
 
 const (
-	Success Status = 1 + iota
+	Success Status = iota
 	Unauthorised
 	BadRequest
 	ServerError
@@ -26,22 +30,26 @@ const (
 type Response struct {
 	code Status
 	msg string
+	cookie *http.Cookie
 }
 
-func MuxHandler(w http.ResponseWriter, req *http.Request) {
+type Handler func(Request) Response
+type Mux map[string] Handler
+
+func MainHandler(w http.ResponseWriter, req *http.Request) {
 	path := strings.Split(req.URL.Path, "/")[1:]
 	if (path[0] == "api") {
-		var api string
-		var ops string
-		var param string
+		parsed_req := Request { cookies : req.Cookies() }
 		switch len(path) {
 		case 2:			// matches /api/:api
-			// do nothing
+			parsed_req.api = path[1]
 		case 3:			// matches /api/:api/:ops
-			ops = path[3]
+			parsed_req.api = path[1]
+			parsed_req.ops = path[2]
 		case 4:			// matches /api/:api/:param/:ops
-			ops = path[3]
-			param = path[4]
+			parsed_req.api = path[1]
+			parsed_req.ops = path[3]
+			parsed_req.param = path[2]
 		default:
 			http.Error(w, "Invalid api request.", http.StatusBadRequest)
 			return
@@ -51,13 +59,16 @@ func MuxHandler(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, "Invalid query string.", http.StatusBadRequest)
 			return
 		}
-		parsed_req := Request {	api, ops, param, query }
+		parsed_req.query = query
 		res := HandleApi(parsed_req)
 		switch res.code {
 		case Success:
+			if (res.cookie != nil) {
+				http.SetCookie(w, res.cookie)
+			}
 			fmt.Fprintf(w, res.msg)
 		case Unauthorised:
-			fmt.Fprintf(w, res.msg, http.StatusUnauthorized)
+			http.Error(w, res.msg, http.StatusUnauthorized)
 		case BadRequest:
 			http.Error(w, res.msg, http.StatusBadRequest)
 		case ServerError:
@@ -65,5 +76,14 @@ func MuxHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		http.ServeFile(w, req, "web" + req.URL.Path)
+	}
+}
+
+func HandleMux(mux Mux, key string, req Request) Response {
+	f, ok := mux[key]
+	if ok {
+		return f(req)
+	} else {
+		return Response { code : BadRequest, msg : "Invalid api request." }
 	}
 }
