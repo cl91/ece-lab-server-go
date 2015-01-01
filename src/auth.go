@@ -10,6 +10,7 @@ import (
 type AuthReply struct {
 	Name string `json:"name"`
 	Auth string `json:"auth"`
+	Type string `json:"type"`
 }
 
 func AuthHandler(req Request) Response {
@@ -37,7 +38,9 @@ func AuthHandler(req Request) Response {
 		return Response { code : ServerError, msg : "Failed to generate authorisation token" }
 	}
 
-	reply := AuthReply { Name : name, Auth : token }
+	usertype, _ := req.db.Hget("user:"+name, "type")
+
+	reply := AuthReply { Name : name, Auth : token, Type: usertype }
 	result, err := json.Marshal(reply)
 	if err != nil {
 		return Response { code : ServerError, msg : "Error marshalling json object: " + err.Error() }
