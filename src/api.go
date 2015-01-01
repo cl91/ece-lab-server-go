@@ -10,6 +10,7 @@ func HandleApi(req Request) Response {
 	if err != nil {
 		return Response { code : ServerError, msg : "Failed to connect to database " + err.Error() }
 	}
+	defer db.Quit()
 	req.db = db
 
 	req.user = ParseUser(req)
@@ -53,7 +54,7 @@ func ParseUser(req Request) string {
 	if auth != "" {
 		user, _ := req.db.Hget("auth", auth)
 		user_auth, _ := req.db.Hget("user:"+user, "auth")
-		if user == user_auth {
+		if auth == user_auth {
 			return user
 		}
 	}
