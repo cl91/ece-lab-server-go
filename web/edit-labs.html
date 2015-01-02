@@ -42,75 +42,45 @@
 
 	    <div class="index-page-body">
 		<div class="lead">
-		    <button class="btn btn-lg btn-primary"
+		    <button class="btn btn-lg btn-primary" id="add-new-lab"
 			    type="button">Add New Lab</button>
 		</div>
-		<div class="edit-labs-table">
-		    <table class="table table-striped">
+		<div id="error"></div>
+		<div>
+		    <table class="table table-striped" id="edit-labs-table">
 			<thead>
+			    <td>Id</td>
 			    <td>Name</td>
 			    <td>Week</td>
-			    <td>Date</td>
 			    <td>Marking Starts</td>
 			    <td>Marking Ends</td>
 			    <td>Marking</td>
 			    <td>Edit</td>
 			</thead>
-			<tbody>
-			    <tr>
-				<td>Lab 1</td>
-				<td>Week 1</td>
-				<td>22/11/2014 10:00</td>
-				<td>22/11/2014 10:00</td>
-				<td>23/11/2014 10:00</td>
-				<td>Number-based out of 5</td>
-				<td>
-				    <button class="btn btn-primary"
-					    type="button">Edit</button>
-				    <button class="btn btn-disabled"
-					    type="button">Remove</button>
-				</td>
-			    </tr>
-
-			    <tr>
-				<td>Lab 2</td>
-				<td>Week 2</td>
-				<td>28/11/2014 10:00</td>
-				<td>28/11/2014 10:00</td>
-				<td>29/11/2014 10:00</td>
-				<td>Criteria-based out of 5</td>
-				<td>
-				    <button class="btn btn-primary"
-					    type="button">Edit</button>
-				    <button class="btn btn-danger"
-					    type="button">Remove</button>
-				</td>
-			    </tr>
-
-			    <tr>
-				<td>Lab 3</td>
-				<td>Week 3</td>
-				<td>5/12/2014 10:00</td>
-				<td>5/12/2014 10:00</td>
-				<td>6/12/2014 10:00</td>
-				<td>Criteria-based out of 5</td>
-				<td>
-				    <button class="btn btn-primary"
-					    type="button">Edit</button>
-				    <button class="btn btn-danger"
-					    type="button">Remove</button>
-				</td>
-			    </tr>
-
-			</tbody>
 		    </table>
 		</div>
 	    </div>
 
 	</div>
 
+	<script id="labs-template" type="text/template">
+	    <tr>
+		<td>{{id}}</td>
+		<td>{{name}}</td>
+		<td>Week {{week}}</td>
+		<td>{{marking_start}}</td>
+		<td>{{marking_end}}</td>
+		<td>{{marking}}</td>
+		<td>
+		    <button class="btn btn-primary edit-lab" data-id="{{id}}"
+			    type="button">Edit</button>
+		</td>
+	    </tr>
+	</script>
+
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
+	<script src="js/markup.min.js"></script>
 
 	<script>
 	 function get_parameter_by_name(name) {
@@ -120,9 +90,57 @@
 	     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 	 }
 
-	 var course = get_parameter_by_name('course')
-	 var title = 'Edit Labs for ' + course
+	 function get_max_array(a) {
+	     return Math.max.apply(null, a);
+	 }
+
+	 var course_upper = get_parameter_by_name('course')
+	 var title = 'Edit Labs for ' + course_upper
+	 var course = course_upper.toLowerCase()
 	 $('#title').text(title)
+
+	 $('#labs-template').hide()
+	 var template = document.getElementById("labs-template").firstChild.textContent
+	 $.ajax({
+	     url : 'api/course/'+course+'/get-labs',
+	     type : 'POST',
+	     dataType : 'json',
+	     success : function(data) {
+		 var html = "<tbody>"
+		 for (var i = 0; i < data.ids.length; i++) {
+		     var id = data.ids[i]
+		     var obj = data.labs[id]
+		     var marking = obj.marking
+		     if (marking == "criteria") {
+			 obj.marking = "Criteria-based out of " + obj.total_mark
+		     } else {
+			 obj.marking = "Number-based out of " + obj.total_mark
+		     }
+		     obj.id = id
+		     html += Mark.up(template, obj)
+		 }
+		 html += "</tbody>"
+		 $('#edit-labs-table').append(html)
+
+		 var max_id = data.ids.length != 0 ? get_max_array(data.ids) : 0
+		 $('#add-new-lab').data("id", max_id+1)
+		 $('#add-new-lab').click(function() {
+		     document.location = "new-lab.html?course="+course+"&id="+$('#add-new-lab').data("id")
+		 })
+
+		 $('.edit-lab').click(function() {
+		     document.location = "new-lab.html?course="+course+"&id="+$(this).data("id")
+		 })
+	     },
+	     error : function(jqxhr, status, error) {
+		 if (error) {
+		     if (error == "Unauthorized") {
+			 document.location = "login.html"
+		     }
+		 }
+		 $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
+	     }
+	 })
 	</script>
 
     </body>

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+	"strconv"
 	"encoding/json"
 	"./redis"
 )
@@ -20,6 +22,7 @@ func CourseHandler(req Request) Response {
 	mux["disable-marker"] = DisableMarkerHandler
 	mux["get-markers"] = GetMarkersHandler
 	mux["get-labs"] = GetLabsHandler
+	mux["edit-lab"] = EditLabHandler
 	return HandleMux(mux, req.ops, req)
 }
 
@@ -221,20 +224,110 @@ func GetMarkersHandler(req Request) Response {
 	return Response { msg : string(reply) }
 }
 
+func ParseTime(value string) (time.Time, error) {
+	loc, err := time.LoadLocation("Pacific/Auckland")
+	if err != nil {
+		return time.Time{}, err
+	}
+	const format = "2006-01-02 15:04"
+	return time.ParseInLocation(format, value, loc)
+}
+
+type Lab struct {
+	Name string `json:"name"`
+	Week int `json:"week"`
+	MarkingStart string `json:"marking_start"`
+	MarkingEnd string `json:"marking_end"`
+	MarkingType string `json:"marking"`
+	TotalMark int `json:"total_mark"`
+	Criteria []MarkingCriteria `json:"criteria"`
+}
+
+type MarkingCriteria struct {
+	Mark int `json:"mark"`
+	Text int `json:"text"`
+}
+
+type LabInfo struct {
+	Ids []int `json:"ids"`
+	Labs []Lab `json:"labs"`
+}
+
+func max(a []int) (m int) {
+	if len(a) == 0 {
+		return 0
+	}
+	m = a[0]
+	for _, v := range a {
+		if m < v {
+			m = v
+		}
+	}
+	return
+}
+
 func GetLabsHandler(req Request) Response {
 	course := req.param
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
 
-	ids, _ := req.db.Smembers("course:"+course+":labs")
-	reply := "["
-	for _, id := range ids {
-		lab, _ := req.db.Get("course:"+course+":lab:"+id)
-		reply += lab + ","
+	ids_str, _ := req.db.Smembers("course:"+course+":labs")
+	ids := make([]int, len(ids_str))
+	for i, id := range ids_str {
+		parsed, _ := strconv.ParseInt(id, 10, 32)
+		ids[i] = int(parsed)
 	}
-	reply += "]"
-	return Response { msg : reply }
+	max_id := max(ids)
+	obj := LabInfo { Ids : ids, Labs : make([]Lab, max_id+1) }
+	for i, id := range ids {
+		lab, _ := req.db.Get("course:"+course+":lab:"+ids_str[i])
+		parsed := Lab {}
+		json.Unmarshal([]byte(lab), &parsed)
+		obj.Labs[id] = parsed
+	}
+	reply, _ := json.Marshal(obj)
+	return Response { msg : string(reply) }
+}
+
+func EditLabHandler(req Request) Response {
+	course := req.param
+	if course == "" {
+		return Response { code : BadRequest, msg : "Need course name" }
+	}
+	idv, ok := req.query["id"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need lab id" }
+	}
+	id := idv[0]
+	lab := Lab {}
+	json.Unmarshal(req.body, &lab)
+	if lab.Week <= 0 {
+		return Response { code : BadRequest, msg : "Invalid lab week." }
+	}
+	if lab.MarkingType == "number" {
+		if lab.TotalMark <= 0 {
+			return Response { code : BadRequest, msg : "Invalid total mark." }
+		}
+	} else if lab.MarkingType == "criteria" {
+		if lab.Criteria == nil || len(lab.Criteria) == 0 {
+			return Response { code : BadRequest, msg : "Invalid criteria." }
+		}
+	} else {
+		return Response { code : BadRequest, msg : "Invalid marking criteria." }
+	}
+	_, err := ParseTime(lab.MarkingStart)
+	if err != nil {
+		return Response { code : BadRequest, msg : "Invalid marking start time." }
+	}
+	_, err = ParseTime(lab.MarkingEnd)
+	if err != nil {
+		return Response { code : BadRequest, msg : "Invalid marking end time." }
+	}
+	req.db.Sadd("course:"+course+":labs", id)
+	stored, _ := json.Marshal(lab)
+	req.db.Set("course:"+course+":lab:"+id, string(stored))
+	return Response { msg : "Successfully updated lab " + id + " for course " + course }
 }
 
 func is_access_allowed(req Request) bool {
@@ -244,7 +337,7 @@ func is_access_allowed(req Request) bool {
 	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", course)
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
-	if req.ops == "get" {	// Admins and active marker can access /course/get
+	if req.ops == "get" {	// Admins and active markers can access /course/get
 		return !is_disabled_marker
 	} else if req.ops == "get-labs" { // Admins and active markers can access /course/:course/get-labs
 		return is_my_course && !is_disabled_marker

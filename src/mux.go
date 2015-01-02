@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"net/url"
 	"net/http"
@@ -13,6 +14,7 @@ type Request struct {
 	ops string
 	param string
 	user string
+	body []byte
 	query map[string] []string
 	cookies []*http.Cookie
 	db redis.Client
@@ -60,6 +62,12 @@ func MainHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		parsed_req.query = query
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			http.Error(w, "Failed to read request body.", http.StatusInternalServerError)
+			return
+		}
+		parsed_req.body = body
 		res := HandleApi(parsed_req)
 		switch res.code {
 		case Success:
