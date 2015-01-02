@@ -54,6 +54,7 @@
 			    <td>Week</td>
 			    <td>Marking Starts</td>
 			    <td>Marking Ends</td>
+			    <td>Is Marking Active</td>
 			    <td>Marking</td>
 			    <td>Edit</td>
 			</thead>
@@ -70,6 +71,7 @@
 		<td>Week {{week}}</td>
 		<td>{{marking_start}}</td>
 		<td>{{marking_end}}</td>
+		<td>{{active}}</td>
 		<td>{{marking}}</td>
 		<td>
 		    <button class="btn btn-primary edit-lab" data-id="{{id}}"
@@ -92,6 +94,17 @@
 
 	 function get_max_array(a) {
 	     return Math.max.apply(null, a);
+	 }
+
+	 function is_active_marking(ids, id) {
+	     if (ids.length) {
+		 for (var i = 0; i < ids.length; i++) {
+		     if (ids[i] == id) {
+			 return "Yes"
+		     }
+		 }
+	     }
+	     return "No"
 	 }
 
 	 var course_upper = get_parameter_by_name('course')
@@ -117,6 +130,7 @@
 			 obj.marking = "Number-based out of " + obj.total_mark
 		     }
 		     obj.id = id
+		     obj.active = is_active_marking(data.active_ids, id)
 		     html += Mark.up(template, obj)
 		 }
 		 html += "</tbody>"

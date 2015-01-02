@@ -166,6 +166,33 @@
 		 }
 	     })
 	 })
+
+	 function is_valid_id(ids, id) {
+	     if (ids.length) {
+		 for (var i = 0; i < ids.length; i++) {
+		     if (ids[i] == id) {
+			 return true
+		     }
+		 }
+	     }
+	     return false
+	 }
+
+	 $.ajax({
+	     url : 'api/course/'+course+'/get-labs',
+	     type : 'POST',
+	     dataType : 'json',
+	     success : function(data) {
+		 if (is_valid_id(data.ids, id)) {
+		     var obj = data.labs[id]
+		     $('#name').val(obj.name)
+		     $('#week').val(obj.week)
+		     $('#mstarts').val(obj.marking_start)
+		     $('#mends').val(obj.marking_end)
+		     $('#total_mark').val(obj.total_mark)
+		 }
+	     }
+	 })
 	</script>
     </body>
 </html>

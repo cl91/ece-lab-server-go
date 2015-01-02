@@ -44,11 +44,13 @@ func NewCourseHandler(req Request) Response {
 type CourseInfo struct {
 	Name string `json:"name"`
 	Aliases []string `json:"aliases"`
+	Labinfo LabInfo `json:"lab_info"`
 }
 	
 func get_course_info(name string, db redis.Client) CourseInfo {
 	aliases, _ := db.Smembers("course:"+name+":aliases")
-	return CourseInfo { Name : name, Aliases : aliases }
+	return CourseInfo { Name : name, Aliases : aliases,
+		Labinfo : get_lab_info(name, db) }
 }
 
 func GetCourseHandler(req Request) Response {
@@ -250,6 +252,7 @@ type MarkingCriteria struct {
 
 type LabInfo struct {
 	Ids []int `json:"ids"`
+	ActiveIds []int `json:"active_ids"`
 	Labs []Lab `json:"labs"`
 }
 
@@ -266,13 +269,22 @@ func max(a []int) (m int) {
 	return
 }
 
-func GetLabsHandler(req Request) Response {
-	course := req.param
-	if course == "" {
-		return Response { code : BadRequest, msg : "Need course name" }
+func is_active_lab(lab Lab) bool {
+	t1, e1 := ParseTime(lab.MarkingStart)
+	t2, e2 := ParseTime(lab.MarkingEnd)
+	if e1 != nil || e2 != nil {
+		return false
 	}
+	t := time.Now()
+	if t1.Before(t) && t.Before(t2) {
+		return true
+	} else {
+		return false
+	}
+}
 
-	ids_str, _ := req.db.Smembers("course:"+course+":labs")
+func get_lab_info(course string, db redis.Client) LabInfo {
+	ids_str, _ := db.Smembers("course:"+course+":labs")
 	ids := make([]int, len(ids_str))
 	for i, id := range ids_str {
 		parsed, _ := strconv.ParseInt(id, 10, 32)
@@ -281,11 +293,29 @@ func GetLabsHandler(req Request) Response {
 	max_id := max(ids)
 	obj := LabInfo { Ids : ids, Labs : make([]Lab, max_id+1) }
 	for i, id := range ids {
-		lab, _ := req.db.Get("course:"+course+":lab:"+ids_str[i])
+		lab, _ := db.Get("course:"+course+":lab:"+ids_str[i])
 		parsed := Lab {}
 		json.Unmarshal([]byte(lab), &parsed)
 		obj.Labs[id] = parsed
 	}
+	active_ids := make([]int, len(ids))
+	i := 0
+	for _, id := range ids {
+		if is_active_lab(obj.Labs[id]) {
+			active_ids[i] = id
+			i++
+		}
+	}
+	obj.ActiveIds = active_ids
+	return obj
+}
+
+func GetLabsHandler(req Request) Response {
+	course := req.param
+	if course == "" {
+		return Response { code : BadRequest, msg : "Need course name" }
+	}
+	obj := get_lab_info(course, req.db)
 	reply, _ := json.Marshal(obj)
 	return Response { msg : string(reply) }
 }
