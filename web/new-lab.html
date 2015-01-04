@@ -130,6 +130,7 @@
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/jquery.form.js"></script>
+	<script src="js/date.js"></script>
 
 	<script>
 	 function get_parameter_by_name(name) {
@@ -178,6 +179,10 @@
 	     return false
 	 }
 
+	 function get_max_array(a) {
+	     return Math.max.apply(null, a);
+	 }
+
 	 $.ajax({
 	     url : 'api/course/'+course+'/get-labs',
 	     type : 'POST',
@@ -190,6 +195,16 @@
 		     $('#mstarts').val(obj.marking_start)
 		     $('#mends').val(obj.marking_end)
 		     $('#total_mark').val(obj.total_mark)
+		 } else if (get_max_array(data.ids)+1 == id) {
+		     var max_id = get_max_array(data.ids)
+		     var week = data.labs[max_id].week
+		     var oldstart = Date.parse(data.labs[max_id].marking_start)
+		     var newstart = (new Date(oldstart)).add(7).days()
+		     var oldend = Date.parse(data.labs[max_id].marking_end)
+		     var newend = (new Date(oldend)).add(7).days()
+		     $('#week').val(week+1)
+		     $('#mstarts').val(newstart.toString('yyyy-MM-dd hh:mm'))
+		     $('#mends').val(newend.toString('yyyy-MM-dd hh:mm'))
 		 }
 	     }
 	 })
