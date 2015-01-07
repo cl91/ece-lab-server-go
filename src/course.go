@@ -23,6 +23,8 @@ func CourseHandler(req Request) Response {
 	mux["get-markers"] = GetMarkersHandler
 	mux["get-labs"] = GetLabsHandler
 	mux["edit-lab"] = EditLabHandler
+	mux["update-student-list"] = UpdateStudentListHandler
+	mux["get-student-list"] = GetStudentListHandler
 	return HandleMux(mux, req.ops, req)
 }
 
@@ -360,19 +362,90 @@ func EditLabHandler(req Request) Response {
 	return Response { msg : "Successfully updated lab " + id + " for course " + course }
 }
 
+type StudentInfo struct {
+	Name string `json:"name"`
+	Upi string `json:"upi"`
+	Id string `json:"id"`
+	Email string `json:"email"`
+}
+
+func add_student_to_course(stu StudentInfo, course string, db redis.Client) {
+	k := "student:"+stu.Id
+	db.Hset(k, "name", stu.Name)
+	db.Hset(k, "upi", stu.Upi)
+	db.Hset(k, "email", stu.Email)
+	db.Sadd(k+":courses", course)
+	db.Sadd("course:"+course+":students", stu.Id)
+}
+
+func get_student_info(id string, db redis.Client) StudentInfo {
+	k := "student:" + id
+	name, _ := db.Hget(k, "name")
+	upi, _ := db.Hget(k, "upi")
+	email, _ := db.Hget(k, "email")
+	return StudentInfo { Name : name, Upi : upi, Id : id, Email : email }
+}
+
+func UpdateStudentListHandler(req Request) Response {
+	coursev, ok := req.query["course"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need course name" }
+	}
+	course := coursev[0]
+	list := make([]StudentInfo, 0)
+	if err := json.Unmarshal(req.body, &list); err != nil {
+		return Response { code : BadRequest,
+			msg : "Failed to parse json input: " + err.Error() }
+	}
+	for _, v := range list {
+		if v.Name == "" || v.Upi == "" || v.Id == "" {
+			continue
+		}
+		add_student_to_course(v, course, req.db)
+	}
+	return Response { msg : "Successfully updated student list for course " + course }
+}
+
+func GetStudentListHandler(req Request) Response {
+	coursev, ok := req.query["course"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need course name" }
+	}
+	course := coursev[0]
+	ids, err := req.db.Smembers("course:"+course+":students")
+	if err != nil {
+		return Response { code : BadRequest,
+			msg : "Failed to access student list for course " + course + ":" + err.Error() }
+	}
+	obj := make([]StudentInfo, len(ids))
+	for i, id := range ids {
+		obj[i] = get_student_info(id, req.db)
+	}
+	reply, e := json.Marshal(obj)
+	if e != nil {
+		return Response { code : ServerError,
+			msg : "Error marshalling json object: " + err.Error() }
+	}
+	return Response { msg : string(reply) }
+}
+
 func is_access_allowed(req Request) bool {
 	user := req.user
 	course := req.param
 	is_admin, _ := req.db.Sismember("admins", user)
-	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", course)
+	is_my_course, _ := req.db.Sismember("user:"+user+":courses", course)
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
-	if req.ops == "get" {	// Admins and active markers can access /course/get
+	if req.ops == "get" || req.ops == "get-student-list" {
+		// Admins and active markers can access /course/get and /course/get-student-list
 		return !is_disabled_marker
-	} else if req.ops == "get-labs" { // Admins and active markers can access /course/:course/get-labs
+	} else if req.ops == "get-labs" {
+		// Admins and active markers can access /course/:course/get-labs
 		return is_my_course && !is_disabled_marker
-	} else if is_admin {	// Only admins can access the rest of the APIs
-		return req.ops == "new" || req.ops == "del-alias" || is_my_course
+	} else if is_admin {
+		// Only admins can access the rest of the APIs
+		return req.ops == "new" || req.ops == "del-alias" ||
+			req.ops == "update-student-list" || is_my_course
 	} else {
 		return false
 	}

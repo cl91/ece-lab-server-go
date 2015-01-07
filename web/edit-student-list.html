@@ -38,7 +38,7 @@
 
 	<div class="container">
 
-	    <h1 class="text-center">Edit Student List</h1>
+	    <h1 class="text-center" id="title">Edit Student List</h1>
 
 	    <div class="jumbotron">
 		<div class="lead">
@@ -112,6 +112,16 @@
 	</script>
 
 	<script>
+	 function get_parameter_by_name(name) {
+	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+             results = regex.exec(location.search);
+	     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	 }
+
+	 var course = get_parameter_by_name('course')
+	 $('#title').text('Edit Student List for ' + course.toUpperCase())
+
 	 var rABS = typeof FileReader !== "undefined" &&
 	 typeof FileReader.prototype !== "undefined" &&
 	 typeof FileReader.prototype.readAsBinaryString !== "undefined"
@@ -200,7 +210,19 @@
 		 o.email = list[i][email]
 		 obj[i] = o
 	     }
-	     console.log(obj)
+
+	     $.ajax({
+		 url : 'api/course/update-student-list?course='+course,
+		 type : 'POST',
+		 data : JSON.stringify(obj),
+		 contentType: "application/json; charset=utf-8",
+		 success : function(jqxhr, status, error) {
+		     document.location = "course-coordinator.html"
+		 },
+		 error : function(jqxhr, status, error) {
+		     $('#error').text('Failed to update student list: ' + jqxhr.responseText)
+		 }
+	     })
 	 }
 	 
 	 var xlf = document.getElementById('xlf')

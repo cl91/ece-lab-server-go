@@ -76,6 +76,8 @@
 				    type="button">View Sign-offs By Lab</button>
 			</div>
 			<div class="alias-course-info">
+			    <button class="btn btn-lg btn-primary view-student-list" data-course="{{name}}"
+				    type="button">View Student List</button>
 			    <button class="btn btn-lg btn-primary edit-student-list" data-course="{{name}}"
 				    type="button">Edit Student List</button>
 			</div>
@@ -92,6 +94,8 @@
 				    type="button">View Sign-offs By Lab</button>
 			</div>
 			<div class="alias-course-info">
+			    <button class="btn btn-lg btn-primary view-student-list" data-course="{{.}}"
+				    type="button">View Student List</button>
 			    <button class="btn btn-lg btn-primary edit-student-list" data-course="{{.}}"
 				    type="button">Edit Student List</button>
 			</div>
@@ -190,6 +194,10 @@
 		     $('.edit-student-list').click(function() {
 			 var course = $(this).data('course')
 			 document.location = 'edit-student-list.html?course=' + course.toLowerCase()
+		     })
+		     $('.view-student-list').click(function() {
+			 var course = $(this).data('course')
+			 document.location = 'view-student-list.html?course=' + course.toLowerCase()
 		     })
 		 }
 	     },
