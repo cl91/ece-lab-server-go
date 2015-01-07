@@ -242,10 +242,10 @@ type Lab struct {
 	MarkingEnd string `json:"marking_end"`
 	MarkingType string `json:"marking"`
 	TotalMark int `json:"total_mark"`
-	Criteria []MarkingCriteria `json:"criteria"`
+	Criterion []MarkingCriterion `json:"criterion"`
 }
 
-type MarkingCriteria struct {
+type MarkingCriterion struct {
 	Mark int `json:"mark"`
 	Text int `json:"text"`
 }
@@ -298,11 +298,11 @@ func get_lab_info(course string, db redis.Client) LabInfo {
 		json.Unmarshal([]byte(lab), &parsed)
 		obj.Labs[id] = parsed
 	}
-	active_ids := make([]int, len(ids))
+	active_ids := make([]int, 0)
 	i := 0
 	for _, id := range ids {
 		if is_active_lab(obj.Labs[id]) {
-			active_ids[i] = id
+			active_ids = append(active_ids, id)
 			i++
 		}
 	}
@@ -339,12 +339,12 @@ func EditLabHandler(req Request) Response {
 		if lab.TotalMark <= 0 {
 			return Response { code : BadRequest, msg : "Invalid total mark." }
 		}
-	} else if lab.MarkingType == "criteria" {
-		if lab.Criteria == nil || len(lab.Criteria) == 0 {
-			return Response { code : BadRequest, msg : "Invalid criteria." }
+	} else if lab.MarkingType == "criterion" {
+		if lab.Criterion == nil || len(lab.Criterion) == 0 {
+			return Response { code : BadRequest, msg : "Invalid criterion." }
 		}
 	} else {
-		return Response { code : BadRequest, msg : "Invalid marking criteria." }
+		return Response { code : BadRequest, msg : "Invalid marking criterion." }
 	}
 	_, err := ParseTime(lab.MarkingStart)
 	if err != nil {
