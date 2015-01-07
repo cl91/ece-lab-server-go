@@ -27,10 +27,10 @@
 		</div>
 		<div id="navbar" class="navbar-collapse collapse">
 		    <ul class="nav navbar-nav">
-			<li><a href="#">Home</a></li>
+			<li><a href="course-coordinator.html">Home</a></li>
 		    </ul>
 		    <ul class="nav navbar-nav navbar-right">
-			<li><a href="#">Logout</a></li>
+			<li><a href="login.html">Logout</a></li>
 		    </ul>
 		</div>
 	    </div>
@@ -38,33 +38,202 @@
 
 	<div class="container">
 
-	    <h1 class="text-center">Edit Student List for COMPSYS 203</h1>
+	    <h1 class="text-center">Edit Student List</h1>
 
-	    <div class="col-md-2">
-	    </div>
-	    <div class="col-md-8 jumbotron">
+	    <div class="jumbotron">
 		<div class="lead">
 		    Please upload new student list here:
 		</div>
 		<div class="lead">
-		    <input type="file" name="student-list" id="student-list"/>
+		    <input type="file" name="xlfile" id="xlf"/>
+		</div>
+		<div class="lead" id="error">
+		</div>
+		<div id="field-table">
 		</div>
 		<div class="lead row">
 		    <div class="col-md-6 text-left">
-			<button class="btn btn-lg" type="button">Cancel</button>
+			<button class="btn btn-lg" type="button" id="cancel-button">Cancel</button>
 		    </div>
 		    <div class="col-md-6 text-right">
-			<button class="btn btn-lg btn-primary"
+			<button class="btn btn-lg btn-primary" id="submit-button"
 				type="button">Submit</button>
 		    </div>
 		</div>
-	    </div>
-	    <div class="col-md-2">
 	    </div>
 
 	</div>
 
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
+	<script src="js/markup.min.js"></script>
+	<script src="js/xlsx.core.min.js"></script>
+
+	<script id="list-template" type="text/template">
+	    <table class="table table-striped">
+		<thead>
+		    <tr>
+			<td>Name</td>
+			<td>UPI</td>
+			<td>AUID</td>
+			<td>Email</td>
+		    </tr>
+		    <tr>
+			<td id="dl_name"></td>
+			<td id="dl_upi"></td>
+			<td id="dl_id"></td>
+			<td id="dl_email"></td>
+		</thead>
+		<tbody>
+		    {{students}}	
+		    <tr>
+			<td>{{name}}</td>
+			<td>{{upi}}</td>
+			<td>{{id}}</td>
+			<td>{{email}}</td>
+		    </tr>
+		    {{/students}}
+		</tbody>
+	    </table>
+	</script>
+
+	<script id="dropdown-template" type="text/template">
+	    <select class="field-dropdown">
+		{{keys}}
+		<option value="{{val}}" {{sl}}>{{val}}</option>
+		{{/keys}}
+	    </select>
+	</script>
+
+	<script>
+	 $('#cancel-button').click(function() {
+	     document.location = 'course-coordinator.html'
+	 })
+	</script>
+
+	<script>
+	 var rABS = typeof FileReader !== "undefined" &&
+	 typeof FileReader.prototype !== "undefined" &&
+	 typeof FileReader.prototype.readAsBinaryString !== "undefined"
+
+	 function fixdata(data) {
+	     var o = "", l = 0, w = 10240
+	     for(; l<data.byteLength/w; ++l)
+		 o+=String.fromCharCode.apply(null,new Uint8Array(data.slice(l*w,l*w+w)))
+	     o+=String.fromCharCode.apply(null, new Uint8Array(data.slice(l*w)))
+	     return o
+	 }
+
+	 function to_json(workbook) {
+	     var result
+	     workbook.SheetNames.forEach(function(sheetName) {
+	 var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName])
+		 if(roa.length > 0){
+		     result = roa
+		 }
+	     })
+	     return result
+	 }
+
+	 function show_parsed_list(list, name, upi, id, email) {
+	     var template = document.getElementById("list-template").firstChild.textContent
+	     
+	     var students = []
+	     for (var i = 0; i < (list.length > 5 ? 5 : list.length); i++) {
+		 var stu = {}
+		 stu.name = list[i][name]
+		 stu.upi = list[i][upi]
+		 stu.id = list[i][id]
+		 stu.email = list[i][email]
+		 students[i] = stu
+	     }
+	     $('#field-table').html(Mark.up(template, { students : students }))
+	     $('#dl_name').html(to_dropdown_list(Object.keys(list[0]), name))
+	     $('#dl_upi').html(to_dropdown_list(Object.keys(list[0]), upi))
+	     $('#dl_id').html(to_dropdown_list(Object.keys(list[0]), id))
+	     $('#dl_email').html(to_dropdown_list(Object.keys(list[0]), email))
+	 }
+
+	 function to_dropdown_list(keys, selected) {
+	     var template = document.getElementById("dropdown-template").firstChild.textContent
+	     var obj = { keys : [] }
+	     for (var i = 0; i < keys.length; i++) {
+		 obj.keys[i] = {}
+		 obj.keys[i].val = keys[i]
+		 if (keys[i] == selected) {
+		     obj.keys[i].sl = 'selected="selected"'
+		 } else {
+		     obj.keys[i].sl = ''
+		 }
+	     }
+	     return Mark.up(template, obj)
+	 }
+	 
+	 function show_student_list(list) {
+	     var l = []
+	     for (var i = 0; i < (list.length > 5 ? 5 : list.length); i++) {
+		 l[i] = list[i]
+	     }
+	     show_parsed_list(l, 'Name', 'UPI', 'AUID', 'E-mail')
+	     var dropdown_listener = function() {
+		 var name = $('#dl_name > select').val()
+		 var upi = $('#dl_upi > select').val()
+		 var id = $('#dl_id > select').val()
+		 var email = $('#dl_email > select').val()
+		 show_parsed_list(l, name, upi, id, email)
+		 $('.field-dropdown').change(dropdown_listener)
+	     }
+	     $('.field-dropdown').change(dropdown_listener)
+	 }
+
+	 function enable_submit_button(list) {
+	     var name = $('#dl_name > select').val()
+	     var upi = $('#dl_upi > select').val()
+	     var id = $('#dl_id > select').val()
+	     var email = $('#dl_email > select').val()
+	     var obj = []
+	     for (var i = 0; i < list.length; i++) {
+		 var o = {}
+		 o.name = list[i][name]
+		 o.upi = list[i][upi]
+		 o.id = list[i][id]
+		 o.email = list[i][email]
+		 obj[i] = o
+	     }
+	     console.log(obj)
+	 }
+	 
+	 var xlf = document.getElementById('xlf')
+	 function handleFile(e) {
+	     var files = e.target.files
+	     if (!files.length) {
+		 $('#error').text('Please select a file for uploading')
+		 return
+	     }
+
+	     var file = files[0]
+	     var reader = new FileReader()
+	     var name = file.name
+	     reader.onload = function(e) {
+		 var data = e.target.result
+		 var wb
+		 if(rABS) {
+		     wb = XLSX.read(data, {type: 'binary'})
+		 } else {
+		     var arr = fixdata(data)
+		     wb = XLSX.read(btoa(arr), {type: 'base64'})
+		 }
+		 var obj = to_json(wb)
+		 show_student_list(obj)
+		 enable_submit_button(obj)
+	     }
+	     if(rABS) reader.readAsBinaryString(file)
+	     else reader.readAsArrayBuffer(file)
+	 }
+	 
+	 if(xlf.addEventListener) {
+	     xlf.addEventListener('change', handleFile, false)
+	 }
+	</script>
     </body>
 </html>
