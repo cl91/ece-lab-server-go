@@ -197,32 +197,36 @@
 	 }
 
 	 function enable_submit_button(list) {
-	     var name = $('#dl_name > select').val()
-	     var upi = $('#dl_upi > select').val()
-	     var id = $('#dl_id > select').val()
-	     var email = $('#dl_email > select').val()
-	     var obj = []
-	     for (var i = 0; i < list.length; i++) {
-		 var o = {}
-		 o.name = list[i][name]
-		 o.upi = list[i][upi]
-		 o.id = list[i][id]
-		 o.email = list[i][email]
-		 obj[i] = o
-	     }
+	     $('#submit-button').click((function(list) {
+		 return function() {
+		     var name = $('#dl_name > select').val()
+		     var upi = $('#dl_upi > select').val()
+		     var id = $('#dl_id > select').val()
+		     var email = $('#dl_email > select').val()
+		     var obj = []
+		     for (var i = 0; i < list.length; i++) {
+			 var o = {}
+			 o.name = list[i][name]
+			 o.upi = list[i][upi]
+			 o.id = list[i][id]
+			 o.email = list[i][email]
+			 obj[i] = o
+		     }
 
-	     $.ajax({
-		 url : 'api/course/update-student-list?course='+course,
-		 type : 'POST',
-		 data : JSON.stringify(obj),
-		 contentType: "application/json; charset=utf-8",
-		 success : function(jqxhr, status, error) {
-		     document.location = "course-coordinator.html"
-		 },
-		 error : function(jqxhr, status, error) {
-		     $('#error').text('Failed to update student list: ' + jqxhr.responseText)
+		     $.ajax({
+			 url : 'api/course/update-student-list?course='+course,
+			 type : 'POST',
+			 data : JSON.stringify(obj),
+			 contentType: "application/json; charset=utf-8",
+			 success : function(jqxhr, status, error) {
+			     document.location = "course-coordinator.html"
+			 },
+			 error : function(jqxhr, status, error) {
+			     $('#error').text('Failed to update student list: ' + jqxhr.responseText)
+			 }
+		     })
 		 }
-	     })
+	     })(list))
 	 }
 	 
 	 var xlf = document.getElementById('xlf')
