@@ -244,7 +244,7 @@ type Lab struct {
 	MarkingEnd string `json:"marking_end"`
 	MarkingType string `json:"marking"`
 	TotalMark int `json:"total_mark"`
-	Criterion []MarkingCriterion `json:"criterion"`
+	Criteria []MarkingCriterion `json:"criteria"`
 }
 
 type MarkingCriterion struct {
@@ -341,12 +341,12 @@ func EditLabHandler(req Request) Response {
 		if lab.TotalMark <= 0 {
 			return Response { code : BadRequest, msg : "Invalid total mark." }
 		}
-	} else if lab.MarkingType == "criterion" {
-		if lab.Criterion == nil || len(lab.Criterion) == 0 {
-			return Response { code : BadRequest, msg : "Invalid criterion." }
+	} else if lab.MarkingType == "criteria" {
+		if lab.Criteria == nil || len(lab.Criteria) == 0 {
+			return Response { code : BadRequest, msg : "Invalid criteria." }
 		}
 	} else {
-		return Response { code : BadRequest, msg : "Invalid marking criterion." }
+		return Response { code : BadRequest, msg : "Invalid marking type." }
 	}
 	_, err := ParseTime(lab.MarkingStart)
 	if err != nil {
@@ -433,7 +433,7 @@ func is_access_allowed(req Request) bool {
 	user := req.user
 	course := req.param
 	is_admin, _ := req.db.Sismember("admins", user)
-	is_my_course, _ := req.db.Sismember("user:"+user+":courses", course)
+	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", course)
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
 	if req.ops == "get" || req.ops == "get-student-list" {
