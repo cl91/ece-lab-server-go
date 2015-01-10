@@ -102,10 +102,46 @@
 		    <div class="row">
 			<div class="col-md-2"></div>
 			<div class="col-md-2 text-right">
-			    <label>Total Marks</label>
+			    <label>Marking Type</label>
+			</div>
+			<div class="col-md-5">
+			    <select id="mtype">
+				<option value="number">Number-based</option>
+				<option value="criteria">Criteria-based</option>
+				<option value="attendance">Attendance-based</option>
+			    </select>
+			</div>
+		    </div>
+
+		    <div class="row" id="total-mark-div">
+			<div class="col-md-2"></div>
+			<div class="col-md-2 text-right">
+			    <label>Total Mark</label>
 			</div>
 			<div class="col-md-5">
 			    <input type="text" id="total_mark" class="form-control" required autofocus>
+			</div>
+		    </div>
+
+		    <div class="row" id="criteria-div">
+			<div class="col-md-2"></div>
+			<div class="col-md-2 text-right">
+			    <label>Criteria</label>
+			</div>
+			<div class="col-md-5">
+			    <button class="btn btn-small btn-success btn-block"
+				    id="new-criterion-button">Add New Criterion</button>
+			    <table class="table table-stripped" id="criteria-table">
+				<thead>
+				    <tr>
+					<th data-override="mark">Submark</th>
+					<th data-override="text">Criterion</th>
+					<th>Remove</th>
+				    </tr>
+				</thead>
+				<tbody>
+				</tbody>
+			    </table>
 			</div>
 		    </div>
 
@@ -131,6 +167,8 @@
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/jquery.form.js"></script>
 	<script src="js/date.js"></script>
+	<script src="js/jquery.tabletojson.min.js"></script>
+	<script src="js/editable-table.js"></script>
 
 	<script>
 	 function get_parameter_by_name(name) {
@@ -151,9 +189,17 @@
 	     obj.week = parseInt($('#week').val())
 	     obj.marking_start = $('#mstarts').val()
 	     obj.marking_end = $('#mends').val()
-	     obj.marking = "number"
+	     obj.marking = $('#mtype').val()
 	     obj.total_mark = parseInt($('#total_mark').val())
-	     obj.criteria = []
+	     var ctbl = $('#criteria-table').tableToJSON({
+		 ignoreColumns: [2]
+	     });
+	     var criteria = []
+	     for (var i = 0; i < ctbl.length; i++) {
+		 criteria[i] = { mark : parseInt(ctbl[i].mark),
+				 text : ctbl[i].text }
+	     }
+	     obj.criteria = criteria
 	     $.ajax({
 		 url : 'api/course/' + course + '/edit-lab?id=' + id,
 		 type : 'POST',
@@ -183,6 +229,35 @@
 	     return Math.max.apply(null, a);
 	 }
 
+	 function add_new_criterion(submark, criterion) {
+	     $('#criteria-table').append('<tr><td>' + submark + '</td><td>' + criterion + '</td><td>'
+					 + '<button class="btn btn-warning remove-button">Remove</button>'
+					 + '</td></tr>')
+	     $('.remove-button').click(function() {
+		 $(this).parent().parent().remove()
+	     })
+	     $('#criteria-table').editableTableWidget();
+	 }
+
+	 function init_marking_criteria() {
+	     $('#total-mark-div').hide()
+	     $('#criteria-div').hide()
+	     $('#mtype').change(function() {
+		 var mtype = $('#mtype').val()
+		 if (mtype === 'number' || mtype === 'attendance') {
+		     $('#total-mark-div').show()
+		     $('#criteria-div').hide()
+		 } else if (mtype === 'criteria') {
+		     $('#total-mark-div').hide()
+		     $('#criteria-div').show()
+		 }
+	     })
+	     $('#new-criterion-button').click(function() {
+		 add_new_criterion(2, 'Enter criterion text here.')
+	     })
+	 }
+
+	 init_marking_criteria()
 	 $.ajax({
 	     url : 'api/course/'+course+'/get-labs',
 	     type : 'POST',
@@ -194,6 +269,19 @@
 		     $('#week').val(obj.week)
 		     $('#mstarts').val(obj.marking_start)
 		     $('#mends').val(obj.marking_end)
+		     $('#mtype').val(obj.marking)
+		     if (obj.marking === 'criteria') {
+			 $('#total-mark-div').hide()
+			 $('#criteria-div').show()
+			 var ctbl = obj.criteria
+			 for (var j = 0; j < ctbl.length; j++) {
+			     var cent = ctbl[j]
+			     add_new_criterion(cent.mark, cent.text)
+			 }
+		     } else {
+			 $('#total-mark-div').show()
+			 $('#criteria-div').hide()
+		     }
 		     $('#total_mark').val(obj.total_mark)
 		 } else if (get_max_array(data.ids)+1 == id) {
 		     var max_id = get_max_array(data.ids)

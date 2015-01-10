@@ -126,9 +126,11 @@
 		     var marking = obj.marking
 		     if (marking == "criteria") {
 			 obj.marking = "Criteria-based out of " + obj.total_mark
-		     } else {
+		     } else if (marking == "number") {
 			 obj.marking = "Number-based out of " + obj.total_mark
-		     }
+		     } else if (marking == "attendance") {
+			 obj.marking = "Attendance-based out of " + obj.total_mark
+		     }			 
 		     obj.id = id
 		     obj.active = is_active_marking(data.active_ids, id)
 		     html += Mark.up(template, obj)

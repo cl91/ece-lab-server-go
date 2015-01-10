@@ -249,7 +249,7 @@ type Lab struct {
 
 type MarkingCriterion struct {
 	Mark int `json:"mark"`
-	Text int `json:"text"`
+	Text string `json:"text"`
 }
 
 type LabInfo struct {
@@ -337,7 +337,7 @@ func EditLabHandler(req Request) Response {
 	if lab.Week <= 0 {
 		return Response { code : BadRequest, msg : "Invalid lab week." }
 	}
-	if lab.MarkingType == "number" {
+	if lab.MarkingType == "number" || lab.MarkingType == "attendance" {
 		if lab.TotalMark <= 0 {
 			return Response { code : BadRequest, msg : "Invalid total mark." }
 		}
@@ -345,6 +345,11 @@ func EditLabHandler(req Request) Response {
 		if lab.Criteria == nil || len(lab.Criteria) == 0 {
 			return Response { code : BadRequest, msg : "Invalid criteria." }
 		}
+		total_mark := 0
+		for _, v := range lab.Criteria {
+			total_mark += v.Mark
+		}
+		lab.TotalMark = total_mark
 	} else {
 		return Response { code : BadRequest, msg : "Invalid marking type." }
 	}
