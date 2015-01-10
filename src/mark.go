@@ -50,8 +50,8 @@ func UploadMarkHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Lab is not active currently" }
 	}
 	lab := lab_info.Labs[id]
-	if (lab.MarkingType == "number" && len(markv) == 1) ||
-		(lab.MarkingType == "criterion" && len(markv) == len(lab.Criteria)) {
+	if ((lab.MarkingType == "number" || lab.MarkingType == "attendance") && len(markv) == 1) ||
+		(lab.MarkingType == "criteria" && len(markv) == len(lab.Criteria)) {
 		update_mark(course, id, uid, string(req.body), req.db)
 		return Response { msg : "Marked student " + uid }
 	} else {
