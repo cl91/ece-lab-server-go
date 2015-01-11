@@ -173,11 +173,6 @@
 		 }
 	     },
 	     error : function(jqxhr, status, error) {
-		 if (error) {
-		     if (error == "Unauthorized") {
-			 document.location = "login.html"
-		     }
-		 }
 		 $('#error').text('Failed to get marker info: ' + jqxhr.responseText)
 	     }
 	 })

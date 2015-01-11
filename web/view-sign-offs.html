@@ -172,11 +172,6 @@
 				    student, course)
 		 },
 		 error : function(jqxhr, status, error) {
-		     if (error) {
-			 if (error == "Unauthorized") {
-			     document.location = "login.html"
-			 }
-		     }
 		     $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
 		 }
 	     })
@@ -210,11 +205,6 @@
 		     $('#sign-offs').html(Mark.up(template, { marks : marks }))
 		 },
 		 error : function(jqxhr, status, error) {
-		     if (error) {
-			 if (error == "Unauthorized") {
-			     document.location = "login.html"
-			 }
-		     }
 		     $('#error').text('Failed to get sign-offs: ' + jqxhr.responseText)
 		 }
 	     })
