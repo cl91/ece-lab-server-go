@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a id="home" href="">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <div class="jumbotron">
+		<div class="lead large-text text-center">Change Password</div>
+		<form class="form-signin text-center" role="form" id="new-admin">
+		    <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-2 text-right">
+			    <label for="name">Old Password</label>
+			</div>
+			<div class="col-md-5">
+			    <input type="password" id="oldpass" name="oldpass" class="form-control" required autofocus>
+			</div>
+		    </div>
+		    <div class="row">
+			<div class="col-md-1"></div>
+			<div class="col-md-3 text-right">
+			    <label for="name">New Password</label>
+			</div>
+			<div class="col-md-5">
+			    <input type="text" id="newpass" name="newpass" class="form-control" required autofocus>
+			</div>
+		    </div>
+		    <label id="error"></label>
+		    <div class="row">
+			<div class="col-md-6"></div>
+			<div class="col-md-2">
+			    <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+			</div>
+		    </div>
+		</form>
+	    </div>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.form.js"></script>
+
+	<script>
+	 function get_parameter_by_name(name) {
+	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+             results = regex.exec(location.search);
+	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	 }
+
+	 var redirect = get_parameter_by_name('redirect')
+
+	 if (redirect == 'superadmin') {
+	     redirect = "admin.html"
+	 } else if (redirect == 'admin') {
+	     redirect = "course-coordinator.html"
+	 } else if (redirect == 'marker') {
+	     redirect = "marker.html"
+	 }
+
+	 $('#home').attr('href', redirect)
+
+	 $('#new-admin').ajaxForm({
+	     beforeSubmit : function showRequest(form_data) {
+		 var query = $.param(form_data)
+		 var url = 'api/passwd?' + query
+		 console.log(redirect)
+		 $.ajax({
+		     url : url,
+		     type : 'POST',
+		     success : function() {
+			 document.location = redirect
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Failed to change password: ' + jqxhr.responseText)
+		     }
+		 })
+		 return false
+	     },
+	 })
+	</script>
+    </body>
+</html>

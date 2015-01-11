@@ -77,3 +77,26 @@ func GenerateRandomString(s int) (string, error) {
 	b, err := GenerateRandomBytes(s)
 	return base64.URLEncoding.EncodeToString(b), err
 }
+
+func PasswdHandler(req Request) Response {
+	user := req.user
+	if user == "" {
+		return Response { code : BadRequest, msg : "Invalid user" }
+	}
+	oldpassv, ok := req.query["oldpass"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Old password required" }
+	}
+	newpassv, ok := req.query["newpass"]
+	if !ok {
+		return Response { code : BadRequest, msg : "New password required" }
+	}
+	oldp := oldpassv[0]
+	newp := newpassv[0]
+	oldpass, _ := req.db.Hget("user:"+user, "pass")
+	if oldpass != oldp {
+		return Response { code : BadRequest, msg : "Incorrect old password" }
+	}
+	req.db.Hset("user:"+user, "pass", newp)
+	return Response { msg : "Password changed." }
+}

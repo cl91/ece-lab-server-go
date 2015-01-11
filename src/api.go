@@ -17,6 +17,7 @@ func HandleApi(req Request) Response {
 
 	mux := make(Mux)
 	mux["auth"] = AuthHandler
+	mux["passwd"] = PasswdHandler
 	mux["admin"] = AdminHandler
 	mux["course"] = CourseHandler
 	mux["mark"] = MarkHandler
