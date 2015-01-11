@@ -175,7 +175,7 @@
 	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
 	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
              results = regex.exec(location.search);
-	     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 	 }
 
 	 var course = get_parameter_by_name('course')
@@ -244,10 +244,10 @@
 	     $('#criteria-div').hide()
 	     $('#mtype').change(function() {
 		 var mtype = $('#mtype').val()
-		 if (mtype === 'number' || mtype === 'attendance') {
+		 if (mtype == 'number' || mtype == 'attendance') {
 		     $('#total-mark-div').show()
 		     $('#criteria-div').hide()
-		 } else if (mtype === 'criteria') {
+		 } else if (mtype == 'criteria') {
 		     $('#total-mark-div').hide()
 		     $('#criteria-div').show()
 		 }
@@ -270,7 +270,7 @@
 		     $('#mstarts').val(obj.marking_start)
 		     $('#mends').val(obj.marking_end)
 		     $('#mtype').val(obj.marking)
-		     if (obj.marking === 'criteria') {
+		     if (obj.marking == 'criteria') {
 			 $('#total-mark-div').hide()
 			 $('#criteria-div').show()
 			 var ctbl = obj.criteria
