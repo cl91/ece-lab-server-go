@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a href="course-coordinator.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <h1 class="text-center" id="title">View Sign-offs By Lab</h1>
+
+	    <div class="index-page-body">
+		<div id="error"></div>
+		<div>
+		    <table class="table table-striped table-hover" id="edit-labs-table">
+			<thead>
+			    <td>Id</td>
+			    <td>Name</td>
+			    <td>Week</td>
+			    <td>Marking Starts</td>
+			    <td>Marking Ends</td>
+			    <td>Is Marking Active</td>
+			    <td>Marking</td>
+			</thead>
+		    </table>
+		</div>
+	    </div>
+
+	</div>
+
+	<script id="labs-template" type="text/template">
+	    <tr class="clickable" data-id="{{id}}">
+		<td>{{id}}</td>
+		<td>{{name}}</td>
+		<td>Week {{week}}</td>
+		<td>{{marking_start}}</td>
+		<td>{{marking_end}}</td>
+		<td>{{active}}</td>
+		<td>{{marking}}</td>
+	    </tr>
+	</script>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/markup.min.js"></script>
+
+	<script>
+	 function get_parameter_by_name(name) {
+	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+             results = regex.exec(location.search);
+	     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	 }
+
+	 function get_max_array(a) {
+	     return Math.max.apply(null, a);
+	 }
+
+	 function is_active_marking(ids, id) {
+	     if (ids.length) {
+		 for (var i = 0; i < ids.length; i++) {
+		     if (ids[i] == id) {
+			 return "Yes"
+		     }
+		 }
+	     }
+	     return "No"
+	 }
+
+	 var course = get_parameter_by_name('course')
+	 var student = get_parameter_by_name('student')
+
+	 $('#labs-template').hide()
+	 var template = document.getElementById("labs-template").firstChild.textContent
+	 $.ajax({
+	     url : 'api/course/'+course+'/get-labs',
+	     type : 'POST',
+	     dataType : 'json',
+	     success : function(data) {
+		 var html = "<tbody>"
+		 for (var i = 0; i < data.ids.length; i++) {
+		     var id = data.ids[i]
+		     var obj = data.labs[id]
+		     var marking = obj.marking
+		     if (marking == "criteria") {
+			 obj.marking = "Criteria-based out of " + obj.total_mark
+		     } else if (marking == "number") {
+			 obj.marking = "Number-based out of " + obj.total_mark
+		     } else if (marking == "attendance") {
+			 obj.marking = "Attendance-based out of " + obj.total_mark
+		     }			 
+		     obj.id = id
+		     obj.active = is_active_marking(data.active_ids, id)
+		     html += Mark.up(template, obj)
+		 }
+		 html += "</tbody>"
+		 $('#edit-labs-table').append(html)
+		 $('.clickable').click(function() {
+		     var id = $(this).data('id')
+		     console.log(id)
+		 })
+	     },
+	     error : function(jqxhr, status, error) {
+		 if (error) {
+		     if (error == "Unauthorized") {
+			 document.location = "login.html"
+		     }
+		 }
+		 $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
+	     }
+	 })
+	</script>
+
+    </body>
+    </body>
+</html>
