@@ -85,6 +85,10 @@
 	 }
 
 	 var course = get_parameter_by_name('course')
+	 var lab_id = get_parameter_by_name('lab')
+	 if (lab_id) {
+	     $('#title').text('Select a Student from the List Below')
+	 }
 
 	 function show_student_list(list) {
 	     var template = document.getElementById("list-template").firstChild.textContent
@@ -92,7 +96,13 @@
 	     $('#field-table').html(Mark.up(template, { students : list }))
 	     $('.clickable').click(function() {
 		 var id = $(this).data('id')
-		 document.location = "view-sign-offs-lab.html?course="+course+"&student="+id
+		 if (lab_id) {
+		     document.location = 'view-sign-offs.html?course=' + course +
+					 '&student=' + id + '&lab=' + lab_id
+		 } else {
+		     document.location = "view-sign-offs-lab.html?course=" +
+					 course + "&student=" + id
+		 }
 	     })
 	 }
 

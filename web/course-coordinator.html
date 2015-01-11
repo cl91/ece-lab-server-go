@@ -202,6 +202,10 @@
 			 var course = $(this).data('course')
 			 document.location = 'view-sign-offs-student.html?course=' + course.toLowerCase()
 		     })
+		     $('.sign-off-lab').click(function() {
+			 var course = $(this).data('course')
+			 document.location = 'view-sign-offs-lab.html?course=' + course.toLowerCase()
+		     })
 		 }
 	     },
 	     error : function(jqxhr, status, error) {

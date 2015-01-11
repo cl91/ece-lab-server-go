@@ -100,6 +100,9 @@
 
 	 var course = get_parameter_by_name('course')
 	 var student = get_parameter_by_name('student')
+	 if (student) {
+	     $('#title').text('Select a Lab from the List Below')
+	 }
 
 	 $('#labs-template').hide()
 	 var template = document.getElementById("labs-template").firstChild.textContent
@@ -127,9 +130,16 @@
 		 html += "</tbody>"
 		 $('#edit-labs-table').append(html)
 		 $('.clickable').click(function() {
-		     var id = $(this).data('id')
-		     console.log(id)
+		     var lab_id = $(this).data('id')
+		     if (student) {
+			 document.location = 'view-sign-offs.html?course=' + course +
+					     '&lab=' + lab_id + '&student=' + student
+		     } else {
+			 document.location = 'view-sign-offs-student.html?course=' + course +
+					     '&lab=' + lab_id
+		     }
 		 })
+			 
 	     },
 	     error : function(jqxhr, status, error) {
 		 if (error) {

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a href="course-coordinator.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <h1 class="text-center" id="title">View Lab Sign-offs</h1>
+
+	    <div class="index-page-body">
+		<div id="error"></div>
+		<h3>Student:</h3>
+		<div id="student-info"></div>
+		<h3>Lab:</h3>
+		<div id="lab-info"></div>
+		<h3>Sign-offs: (Larger id means older.)</h3>
+		<div id="sign-offs"></div>
+	    </div>
+
+	</div>
+
+	<script id="student-template" type="text/template">
+	    <table class="table table-striped">
+		<thead>
+		    <tr>
+			<td>Name</td>
+			<td>UPI</td>
+			<td>AUID</td>
+			<td>Email</td>
+		    </tr>
+		</thead>
+		<tbody>
+		    <tr>
+			<td>{{name}}</td>
+			<td>{{upi}}</td>
+			<td>{{id}}</td>
+			<td>{{email}}</td>
+		    </tr>
+		</tbody>
+	    </table>
+	</script>
+
+	<script id="lab-template" type="text/template">
+	    <table class="table table-striped">
+		<thead>
+		    <td>Id</td>
+		    <td>Name</td>
+		    <td>Week</td>
+		    <td>Marking Starts</td>
+		    <td>Marking Ends</td>
+		    <td>Is Marking Active</td>
+		    <td>Marking</td>
+		</thead>
+		<tbody>
+		    <tr>
+			<td>{{id}}</td>
+			<td>{{name}}</td>
+			<td>Week {{week}}</td>
+			<td>{{marking_start}}</td>
+			<td>{{marking_end}}</td>
+			<td>{{active}}</td>
+			<td>{{marking}}</td>
+		    </tr>
+		</tbody>
+	    </table>
+	</script>
+
+	<script id="sign-offs-template" type="text/template">
+	    <table class="table table-striped">
+		<thead>
+		    <td>Id</td>
+		    <td>Mark</td>
+		</thead>
+		<tbody>
+		    {{marks}}
+		    <tr>
+			<td>{{id}}</td>
+			<td>
+			    {{texts}}
+			    <p>{{.}}</p>
+			    {{/texts}}
+			</td>
+		    </tr>
+		    {{/marks}}
+		</tbody>
+	    </table>
+	</script>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/markup.min.js"></script>
+
+	<script>
+	 function get_parameter_by_name(name) {
+	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+             results = regex.exec(location.search);
+	     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	 }
+
+	 function get_max_array(a) {
+	     return Math.max.apply(null, a);
+	 }
+
+	 function is_active_marking(ids, id) {
+	     if (ids.length) {
+		 for (var i = 0; i < ids.length; i++) {
+		     if (ids[i] == id) {
+			 return "Yes"
+		     }
+		 }
+	     }
+	     return "No"
+	 }
+
+	 function show_lab_info(template, show_sign_offs) {
+	     var course = get_parameter_by_name('course')
+	     var lab_id = get_parameter_by_name('lab')
+	     var student = get_parameter_by_name('student')
+	     $.ajax({
+		 url : 'api/course/'+course+'/get-labs',
+		 type : 'POST',
+		 dataType : 'json',
+		 success : function(data) {
+		     var obj = data.labs[lab_id]
+		     var mtype = obj.marking
+		     var marking = obj.marking
+		     if (marking == "criteria") {
+			 obj.marking = "Criteria-based out of " + obj.total_mark
+		     } else if (marking == "number") {
+			 obj.marking = "Number-based out of " + obj.total_mark
+		     } else if (marking == "attendance") {
+			 obj.marking = "Attendance-based out of " + obj.total_mark
+		     }			 
+		     obj.active = is_active_marking(data.active_ids, lab_id)
+		     obj.id = lab_id
+		     $('#lab-info').html(Mark.up(template, obj))
+		     show_sign_offs({ id:lab_id, mtype:mtype, criteria:obj.criteria },
+				    student, course)
+		 },
+		 error : function(jqxhr, status, error) {
+		     if (error) {
+			 if (error == "Unauthorized") {
+			     document.location = "login.html"
+			 }
+		     }
+		     $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
+		 }
+	     })
+	 }
+
+	 function show_sign_offs(lab, uid, course) {
+	     $.ajax({
+		 url : 'api/mark/'+course+'/get-marked?lab='+lab.id+'&uid='+uid,
+		 type : 'POST',
+		 dataType : 'json',
+		 success : function(data) {
+		     var template = document.getElementById("sign-offs-template")
+						      .firstChild.textContent
+		     var marks = []
+		     for (var i = 0; i < data.length; i++) {
+			 mark = data[i]
+			 texts = []
+			 if (lab.mtype === 'criteria') {
+			     for (var j = 0; j < mark.length; j++) {
+				 var symb = mark[j] == 0 ? '&#10007;' : '&#10004;'
+				 texts[j] = symb + ' ' + lab.criteria[j].text
+			     }
+			 } else if (lab.mtype === 'number') {
+			     texts[0] = mark[0]
+			 } else if (lab.mtype === 'attendance') {
+			     var symb = mark[0] == 0 ? '&#10007;' : '&#10004;'
+			     texts[0] = symb + ' Student attended lab.'
+			 }
+			 marks[i] = { id : i+1, texts : texts }
+		     }
+		     $('#sign-offs').html(Mark.up(template, { marks : marks }))
+		 },
+		 error : function(jqxhr, status, error) {
+		     if (error) {
+			 if (error == "Unauthorized") {
+			     document.location = "login.html"
+			 }
+		     }
+		     $('#error').text('Failed to get sign-offs: ' + jqxhr.responseText)
+		 }
+	     })
+	 }
+
+	 function show_student_info(template) {
+	     var course = get_parameter_by_name('course')
+	     var student = get_parameter_by_name('student')
+	     $.ajax({
+		 url : 'api/course/get-student-list?course='+course,
+		 type : 'POST',
+		 dataType : 'json',
+		 success : function(data) {
+		     var stu
+		     for (var i = 0; i < data.length; i++) {
+			 if (data[i].id === student) {
+			     stu = data[i]
+			     break
+			 }
+		     }
+		     if (stu) {
+			 $('#student-info').html(Mark.up(template, stu))
+		     }
+		 },
+		 error : function(jqxhr, status, error) {
+		     $('#error').text('Failed to get student list: ' + jqxhr.responseText)
+		 }
+	     })
+	 }
+
+	 var student_template = document.getElementById("student-template").firstChild.textContent
+	 var lab_template = document.getElementById("lab-template").firstChild.textContent
+
+	 show_lab_info(lab_template, show_sign_offs)
+	 show_student_info(student_template)
+
+	</script>
+
+    </body>
+    </body>
+</html>
