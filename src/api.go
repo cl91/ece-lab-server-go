@@ -5,6 +5,13 @@ import (
 	"./redis"
 )
 
+type UserType int
+const (
+	Student UserType = iota
+	NonStudent
+	InvalidUser
+)
+
 func HandleApi(req Request) Response {
 	db, err := InitDb()
 	if err != nil {
@@ -13,7 +20,18 @@ func HandleApi(req Request) Response {
 	defer db.Quit()
 	req.db = db
 
-	req.user = ParseUser(req)
+	user, utype := ParseUser(req)
+	switch utype {
+	case Student:
+		req.student = user
+		req.user = ""
+	case NonStudent:
+		req.student = ""
+		req.user = user
+	case InvalidUser:
+		req.student = ""
+		req.user = ""
+	}
 
 	mux := make(Mux)
 	mux["auth"] = AuthHandler
@@ -36,7 +54,7 @@ func InitDb() (redis.Client, error) {
         return redis.NewSynchClientWithSpec(spec)
 }
 
-func ParseUser(req Request) string {
+func ParseUser(req Request) (string, UserType) {
 	var auth string
 	if req.cookies != nil {
 		for _, cookie := range req.cookies {
@@ -56,8 +74,13 @@ func ParseUser(req Request) string {
 		user, _ := req.db.Hget("auth", auth)
 		user_auth, _ := req.db.Hget("user:"+user, "auth")
 		if auth == user_auth {
-			return user
+			return user, NonStudent
+		}
+		stu_id, _ := req.db.Hget("student-auth", auth)
+		stu_auth, _ := req.db.Hget("student:"+stu_id, "auth")
+		if auth == stu_auth {
+			return user, Student
 		}
 	}
-	return ""
+	return "", InvalidUser
 }

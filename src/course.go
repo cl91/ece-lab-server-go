@@ -178,6 +178,7 @@ func DisableMarkerHandler(req Request) Response {
 		req.db.Sadd("course:"+course+":disabled-markers", name)
 		req.db.Srem("course:"+course+":markers", name)
 		req.db.Srem("user:"+name+":primary-courses", course)
+		req.db.Hset("user:"+name, "type", "")
 		return Response { msg : "Disabled marker " + name + " for course " + course }
 	} else {
 		return Response { code : BadRequest,
@@ -200,6 +201,7 @@ func EnableMarkerHandler(req Request) Response {
 		req.db.Srem("course:"+course+":disabled-markers", name)
 		req.db.Sadd("course:"+course+":markers", name)
 		req.db.Sadd("user:"+name+":primary-courses", course)
+		req.db.Hset("user:"+name, "type", "marker")
 		return Response { msg : "Enabled marker " + name + " for course " + course }
 	} else {
 		return Response { code : BadRequest,
@@ -381,6 +383,12 @@ func add_student_to_course(stu StudentInfo, course string, db redis.Client) {
 	db.Hset(k, "email", stu.Email)
 	db.Sadd(k+":courses", course)
 	db.Sadd("course:"+course+":students", stu.Id)
+	db.Sadd("students", stu.Id)
+	db.Hset("student-upi-to-id", stu.Upi, stu.Id)
+	pass, e := db.Hget(k, "pass")
+	if e != nil || pass == "" {
+		db.Hset(k, "pass", stu.Upi)
+	}
 }
 
 func get_student_info(id string, db redis.Client) StudentInfo {
