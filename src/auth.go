@@ -1,7 +1,6 @@
 package main
 
 import (
-	"unicode"
 	"encoding/json"
 	"crypto/rand"
 	"encoding/base64"
@@ -23,35 +22,14 @@ func AuthHandler(req Request) Response {
 	if !ok {
 		return Response { code : BadRequest, msg : "Password required" }
 	}
-	utypev, ok := req.query["type"]
-	is_student := ok && (utypev[0] == "student")
 	name := namev[0]
 	pass := passv[0]
-	if is_student {
-		is_id := unicode.IsDigit([]rune(name)[0])
-		if is_id {
-			if reply, _ := req.db.Sismember("students", name); !reply {
-				return Response { code : Unauthorised, msg : "Invalid student id: " + name }
-			}
-		} else {
-			reply, e := req.db.Hget("student-upi-to-id", name)
-			if e != nil || reply == "" {
-				return Response { code : Unauthorised, msg : "Invalid student upi: " + name }
-			}
-			name = reply
-		}
-		realpass, _ := req.db.Hget("student:"+name, "pass")
-		if pass != realpass {
-			return Response { code : Unauthorised, msg : "Invalid password for student " + name }
-		}
-	} else {
-		if reply, _ := req.db.Sismember("users", name); !reply {
-			return Response { code : Unauthorised, msg : "Invalid user name: " + name }
-		}
-		realpass, _ := req.db.Hget("user:"+name, "pass")
-		if pass != realpass {
-			return Response { code : Unauthorised, msg : "Invalid password for user: " + name }
-		}
+	if reply, _ := req.db.Sismember("users", name); !reply {
+		return Response { code : Unauthorised, msg : "Invalid user name: " + name }
+	}
+	realpass, _ := req.db.Hget("user:"+name, "pass")
+	if pass != realpass {
+		return Response { code : Unauthorised, msg : "Invalid password for user: " + name }
 	}
 
 	// Generate a 44 byte, base64 encoded output
@@ -60,12 +38,7 @@ func AuthHandler(req Request) Response {
 		return Response { code : ServerError, msg : "Failed to generate authorisation token" }
 	}
 
-	usertype := ""
-	if is_student {
-		usertype = "student"
-	} else {
-		usertype, _ = req.db.Hget("user:"+name, "type")
-	}
+	usertype, _ := req.db.Hget("user:"+name, "type")
 
 	reply := AuthReply { Name : name, Auth : token, Type: usertype }
 	result, err := json.Marshal(reply)
@@ -73,13 +46,8 @@ func AuthHandler(req Request) Response {
 		return Response { code : ServerError, msg : "Error marshalling json object: " + err.Error() }
 	}
 
-	if is_student {
-		req.db.Hset("student:"+name, "auth", token)
-		req.db.Hset("student-auth", token, name)
-	} else {
-		req.db.Hset("user:"+name, "auth", token)
-		req.db.Hset("auth", token, name)
-	}
+	req.db.Hset("user:"+name, "auth", token)
+	req.db.Hset("auth", token, name)
 	cookie := http.Cookie { Name : "auth", Value : token }
 
 	return Response { msg: string(result), cookie : &cookie }

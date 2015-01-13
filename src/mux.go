@@ -14,7 +14,6 @@ type Request struct {
 	ops string
 	param string
 	user string
-	student string
 	body []byte
 	query map[string] []string
 	cookies []*http.Cookie
