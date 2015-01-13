@@ -399,7 +399,7 @@ func add_student_to_course(stu StudentInfo, course string, db redis.Client) {
 	db.Hset("student-upi-to-id", stu.Upi, stu.Id)
 	pass, e := db.Hget(k, "pass")
 	if e != nil || pass == "" {
-		db.Hset(k, "pass", stu.Id)
+		db.Hset(k, "pass", stu.Upi)
 	}
 }
 
