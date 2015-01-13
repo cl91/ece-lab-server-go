@@ -422,7 +422,7 @@ func get_student_ids(course string, merge bool, db redis.Client) (ids []string, 
 		if err != nil {
 			return nil, err
 		}
-		// Is Rob Pike so retarded? WTF?!! No generics?!!!
+		// Is Rob Pike this retarded? WTF?!! No generics?!!!
 		prim_course_stu_ids_conv := make([]interface{}, len(prim_course_stu_ids))
 		for i, v := range prim_course_stu_ids {
 			prim_course_stu_ids_conv[i] = interface{}(v)
