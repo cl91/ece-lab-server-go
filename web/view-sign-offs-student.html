@@ -107,7 +107,7 @@
 	 }
 
 	 $.ajax({
-	     url : 'api/course/get-student-list?course='+course,
+	     url : 'api/course/' + course + '/get-student-list',
 	     type : 'POST',
 	     dataType : 'json',
 	     success : function(data) {

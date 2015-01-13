@@ -12,7 +12,8 @@ import (
 type Request struct {
 	api string
 	ops string
-	param string
+	course string
+	primary_course string
 	user string
 	body []byte
 	query map[string] []string
@@ -48,10 +49,10 @@ func MainHandler(w http.ResponseWriter, req *http.Request) {
 		case 3:			// matches /api/:api/:ops
 			parsed_req.api = path[1]
 			parsed_req.ops = path[2]
-		case 4:			// matches /api/:api/:param/:ops
+		case 4:			// matches /api/:api/:course/:ops
 			parsed_req.api = path[1]
 			parsed_req.ops = path[3]
-			parsed_req.param = path[2]
+			parsed_req.course = path[2]
 		default:
 			http.Error(w, "Invalid api request.", http.StatusBadRequest)
 			return

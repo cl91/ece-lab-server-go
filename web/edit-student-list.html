@@ -214,7 +214,7 @@
 		     }
 
 		     $.ajax({
-			 url : 'api/course/update-student-list?course='+course,
+			 url : 'api/course/' + course + '/update-student-list',
 			 type : 'POST',
 			 data : JSON.stringify(obj),
 			 contentType: "application/json; charset=utf-8",

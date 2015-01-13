@@ -8,7 +8,7 @@ import (
 )
 
 func CourseHandler(req Request) Response {
-	if !is_access_allowed(req) {
+	if !is_access_allowed(&req) {
 		return Response { code : Unauthorised, msg : "Access denied" }
 	}
 	mux := make(Mux)
@@ -16,7 +16,6 @@ func CourseHandler(req Request) Response {
 	mux["del"] = DelCourseHandler
 	mux["get"] = GetCourseHandler
 	mux["new-alias"] = NewAliasHandler
-	mux["del-alias"] = DelAliasHandler
 	mux["new-marker"] = NewMarkerHandler
 	mux["enable-marker"] = EnableMarkerHandler
 	mux["disable-marker"] = DisableMarkerHandler
@@ -74,13 +73,13 @@ func GetCourseHandler(req Request) Response {
 // /course/:course/del
 func DelCourseHandler(req Request) Response {
 	user := req.user
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
 
-	is_course, _ := req.db.Sismember("user:"+user+":primary-courses", course)
-	if is_course {
+	is_primary_course := req.primary_course == req.course
+	if is_primary_course {
 		aliases, _ := req.db.Smembers("course:"+course+":aliases")
 		if len(aliases) != 0 {
 			return Response { code : BadRequest, msg : "Course " +
@@ -91,7 +90,11 @@ func DelCourseHandler(req Request) Response {
 			return Response { msg : "Course " + course + " deleted." }
 		}
 	} else {
-		return Response { code : BadRequest, msg : "Invalid course name" }
+		req.db.Srem("courses", course)
+		req.db.Srem("course:" + req.primary_course + ":aliases", course)
+		req.db.Del("course:" + course + ":aliased-to")
+		return Response { msg : "Deleted alias " + course +
+			" for course " + req.primary_course }
 	}
 }
 
@@ -102,7 +105,7 @@ func NewAliasHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Need alias course name" }
 	}
 	name := namev[0]
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -118,26 +121,6 @@ func NewAliasHandler(req Request) Response {
 	}
 }
 
-// POST /course/:course/del?name=mecheng701
-func DelAliasHandler(req Request) Response {
-	namev, ok := req.query["name"]
-	if !ok {
-		return Response { code : BadRequest, msg : "Need alias course name" }
-	}
-	name := namev[0]
-
-	course, _ := req.db.Get("course:"+name+":aliased-to")
-	if course != "" {
-		req.db.Srem("courses", name)
-		req.db.Srem("course:"+course+":aliases", name)
-		req.db.Del("course:"+name+":aliased-to")
-		return Response { msg : "Deleted alias " + name + " for course " + course }
-	} else {
-		return Response { code : BadRequest,
-			msg : "Course " + name + " is not an alias course" }
-	}
-}
-
 // POST /course/:course/new-marker?name=odep012
 func NewMarkerHandler(req Request) Response {
 	namev, ok := req.query["name"]
@@ -145,7 +128,7 @@ func NewMarkerHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Need marker name" }
 	}
 	name := namev[0]
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -176,7 +159,7 @@ func DisableMarkerHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Need marker name" }
 	}
 	name := namev[0]
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -199,7 +182,7 @@ func EnableMarkerHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Need marker name" }
 	}
 	name := namev[0]
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -222,7 +205,7 @@ type Markers struct {
 
 // POST /course/:course/get-markers
 func GetMarkersHandler(req Request) Response {
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -323,7 +306,7 @@ func get_lab_info(course string, db redis.Client) LabInfo {
 
 // POST /course/:course/get-labs
 func GetLabsHandler(req Request) Response {
-	course := req.param
+	course := req.primary_course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -335,7 +318,7 @@ func GetLabsHandler(req Request) Response {
 // POST /course/:course/edit-lab?id=1
 // DATA see Lab struct
 func EditLabHandler(req Request) Response {
-	course := req.param
+	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
@@ -403,14 +386,13 @@ func get_student_info(id string, db redis.Client) StudentInfo {
 	return StudentInfo { Name : name, Upi : upi, Id : id, Email : email }
 }
 
-// POST /course/update-student-list?course=mecheng701
+// POST /course/:course/update-student-list
 // DATA array of StudentInfo
 func UpdateStudentListHandler(req Request) Response {
-	coursev, ok := req.query["course"]
-	if !ok {
+	course := req.course
+	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
-	course := coursev[0]
 	list := make([]StudentInfo, 0)
 	if err := json.Unmarshal(req.body, &list); err != nil {
 		return Response { code : BadRequest,
@@ -425,13 +407,12 @@ func UpdateStudentListHandler(req Request) Response {
 	return Response { msg : "Successfully updated student list for course " + course }
 }
 
-// POST /course/get-student-list?course=mecheng701
+// POST /course/:course/get-student-list
 func GetStudentListHandler(req Request) Response {
-	coursev, ok := req.query["course"]
-	if !ok {
+	course := req.course
+	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
-	course := coursev[0]
 	ids, err := req.db.Smembers("course:"+course+":students")
 	if err != nil {
 		return Response { code : BadRequest,
@@ -449,23 +430,29 @@ func GetStudentListHandler(req Request) Response {
 	return Response { msg : string(reply) }
 }
 
-func is_access_allowed(req Request) bool {
+func is_access_allowed(req *Request) bool {
 	user := req.user
-	course := req.param
+	course := req.course
+	aliased_to, _ := req.db.Get("course:"+course+":aliased-to")
+	primary_course := course
+	if aliased_to != "" {
+		primary_course = aliased_to
+	}
+	req.primary_course = primary_course
 	is_admin, _ := req.db.Sismember("admins", user)
-	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", course)
+	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", primary_course)
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
-	if req.ops == "get" || req.ops == "get-student-list" {
-		// Admins and active markers can access /course/get and /course/get-student-list
+	if req.ops == "get" {
+		// Admins and active markers can access /course/get
 		return !is_disabled_marker
-	} else if req.ops == "get-labs" {
-		// Admins and active markers can access /course/:course/get-labs
+	} else if req.ops == "get-labs" || req.ops == "get-student-list" {
+		// Admins and active markers can access
+		// /course/:course/get-labs and /course/:course/get-student-list
 		return is_my_course && !is_disabled_marker
 	} else if is_admin {
 		// Only admins can access the rest of the APIs
-		return req.ops == "new" || req.ops == "del-alias" ||
-			req.ops == "update-student-list" || is_my_course
+		return req.ops == "new" || req.ops == "del-alias" || is_my_course
 	} else {
 		return false
 	}
