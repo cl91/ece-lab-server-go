@@ -28,6 +28,7 @@ func CourseHandler(req Request) Response {
 	return HandleMux(mux, req.ops, req)
 }
 
+// POST /course/new?name=compsys723
 func NewCourseHandler(req Request) Response {
 	namev, ok := req.query["name"]
 	if !ok {
@@ -55,6 +56,7 @@ func get_course_info(name string, db redis.Client) CourseInfo {
 		Labinfo : get_lab_info(name, db) }
 }
 
+// POST /course/get
 func GetCourseHandler(req Request) Response {
 	courses, _ := req.db.Smembers("user:"+req.user+":primary-courses")
 	obj := make([]CourseInfo, len(courses), len(courses))
@@ -69,6 +71,7 @@ func GetCourseHandler(req Request) Response {
 	return Response { msg : string(reply) }
 }
 
+// /course/:course/del
 func DelCourseHandler(req Request) Response {
 	user := req.user
 	course := req.param
@@ -92,6 +95,7 @@ func DelCourseHandler(req Request) Response {
 	}
 }
 
+// POST /course/:course/new-alias?name=mecheng701
 func NewAliasHandler(req Request) Response {
 	namev, ok := req.query["name"]
 	if !ok {
@@ -114,6 +118,7 @@ func NewAliasHandler(req Request) Response {
 	}
 }
 
+// POST /course/:course/del?name=mecheng701
 func DelAliasHandler(req Request) Response {
 	namev, ok := req.query["name"]
 	if !ok {
@@ -133,6 +138,7 @@ func DelAliasHandler(req Request) Response {
 	}
 }
 
+// POST /course/:course/new-marker?name=odep012
 func NewMarkerHandler(req Request) Response {
 	namev, ok := req.query["name"]
 	if !ok {
@@ -163,6 +169,7 @@ func NewMarkerHandler(req Request) Response {
 	}
 }
 
+// POST /course/:course/disable-marker?name=odep012
 func DisableMarkerHandler(req Request) Response {
 	namev, ok := req.query["name"]
 	if !ok {
@@ -186,6 +193,7 @@ func DisableMarkerHandler(req Request) Response {
 	}
 }
 
+// POST /course/:course/enable-marker?name=odep012
 func EnableMarkerHandler(req Request) Response {
 	namev, ok := req.query["name"]
 	if !ok {
@@ -214,6 +222,7 @@ type Markers struct {
 	DisabledMarkers []string `json:"disabled"`
 }
 
+// POST /course/:course/get-markers
 func GetMarkersHandler(req Request) Response {
 	course := req.param
 	if course == "" {
@@ -314,6 +323,7 @@ func get_lab_info(course string, db redis.Client) LabInfo {
 	return obj
 }
 
+// POST /course/:course/get-labs
 func GetLabsHandler(req Request) Response {
 	course := req.param
 	if course == "" {
@@ -324,6 +334,8 @@ func GetLabsHandler(req Request) Response {
 	return Response { msg : string(reply) }
 }
 
+// POST /course/:course/edit-lab?id=1
+// DATA see Lab struct
 func EditLabHandler(req Request) Response {
 	course := req.param
 	if course == "" {
@@ -399,6 +411,8 @@ func get_student_info(id string, db redis.Client) StudentInfo {
 	return StudentInfo { Name : name, Upi : upi, Id : id, Email : email }
 }
 
+// POST /course/update-student-list?course=mecheng701
+// DATA array of StudentInfo
 func UpdateStudentListHandler(req Request) Response {
 	coursev, ok := req.query["course"]
 	if !ok {
@@ -419,6 +433,7 @@ func UpdateStudentListHandler(req Request) Response {
 	return Response { msg : "Successfully updated student list for course " + course }
 }
 
+// POST /course/get-student-list?course=mecheng701
 func GetStudentListHandler(req Request) Response {
 	coursev, ok := req.query["course"]
 	if !ok {
