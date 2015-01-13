@@ -112,8 +112,7 @@ func GenerateRandomString(s int) (string, error) {
 
 func PasswdHandler(req Request) Response {
 	user := req.user
-	student := req.student
-	if user == "" && student == "" {
+	if user == "" {
 		return Response { code : BadRequest, msg : "Invalid user" }
 	}
 	oldpassv, ok := req.query["oldpass"]
@@ -126,19 +125,10 @@ func PasswdHandler(req Request) Response {
 	}
 	oldp := oldpassv[0]
 	newp := newpassv[0]
-	oldpass := ""
-	if user != "" {
-		oldpass, _ = req.db.Hget("user:"+user, "pass")
-	} else if student != "" {
-		oldpass, _ = req.db.Hget("student:"+student, "pass")
-	}
+	oldpass, _ := req.db.Hget("user:"+user, "pass")
 	if oldpass != oldp {
 		return Response { code : BadRequest, msg : "Incorrect old password" }
 	}
-	if user != "" {
-		req.db.Hset("user:"+user, "pass", newp)
-	} else if student != "" {
-		req.db.Hset("student:"+student, "pass", newp)
-	}
+	req.db.Hset("user:"+user, "pass", newp)
 	return Response { msg : "Password changed." }
 }
