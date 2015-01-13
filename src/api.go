@@ -5,6 +5,18 @@ import (
 	"./redis"
 )
 
+type Handler func(Request) Response
+type Mux map[string] Handler
+
+func HandleMux(mux Mux, key string, req Request) Response {
+	f, ok := mux[key]
+	if ok {
+		return f(req)
+	} else {
+		return Response { code : BadRequest, msg : "Invalid api request." }
+	}
+}
+
 func HandleApi(req Request) Response {
 	db, err := InitDb()
 	if err != nil {
@@ -14,6 +26,7 @@ func HandleApi(req Request) Response {
 	req.db = db
 
 	req.user = ParseUser(req)
+	req.primary_course = ParsePrimaryCourse(req)
 
 	mux := make(Mux)
 	mux["auth"] = AuthHandler
@@ -60,4 +73,13 @@ func ParseUser(req Request) string {
 		}
 	}
 	return ""
+}
+
+func ParsePrimaryCourse(req Request) string {
+	aliased_to, _ := req.db.Get("course:"+course+":aliased-to")
+	primary_course := req.course
+	if aliased_to != "" {
+		primary_course = aliased_to
+	}
+	return primary_course
 }

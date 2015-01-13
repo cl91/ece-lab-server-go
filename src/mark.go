@@ -106,6 +106,7 @@ func get_marks(course string, id uint64, uid string, db redis.Client) (markv [][
 func is_marker_of_this_course(req Request) bool {
 	user := req.user
 	course := req.course
+	primary_course := req.course
 	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", course)
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
