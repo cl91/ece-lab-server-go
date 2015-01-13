@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"./redis"
+	"./mapset"
 )
 
 func CourseHandler(req Request) Response {
@@ -48,9 +49,13 @@ type CourseInfo struct {
 	Aliases []string `json:"aliases"`
 	Labinfo LabInfo `json:"lab_info"`
 }
-	
+
+func get_aliases(name string, db redis.Client) ([]string, error) {
+	return db.Smembers("course:"+name+":aliases")
+}
+
 func get_course_info(name string, db redis.Client) CourseInfo {
-	aliases, _ := db.Smembers("course:"+name+":aliases")
+	aliases, _ := get_aliases(name, db)
 	return CourseInfo { Name : name, Aliases : aliases,
 		Labinfo : get_lab_info(name, db) }
 }
@@ -367,14 +372,16 @@ type StudentInfo struct {
 	Upi string `json:"upi"`
 	Id string `json:"id"`
 	Email string `json:"email"`
+	Marked bool `json:"marked"`
+	TotalMark uint `json:"total_mark"`
 }
 
-func add_student_to_course(stu StudentInfo, course string, db redis.Client) {
+func add_student_to_course(stu StudentInfo, course string, primary_course string, db redis.Client) {
 	k := "student:"+stu.Id
 	db.Hset(k, "name", stu.Name)
 	db.Hset(k, "upi", stu.Upi)
 	db.Hset(k, "email", stu.Email)
-	db.Sadd(k+":courses", course)
+	db.Sadd(k+":courses", primary_course)
 	db.Sadd("course:"+course+":students", stu.Id)
 }
 
@@ -384,6 +391,62 @@ func get_student_info(id string, db redis.Client) StudentInfo {
 	upi, _ := db.Hget(k, "upi")
 	email, _ := db.Hget(k, "email")
 	return StudentInfo { Name : name, Upi : upi, Id : id, Email : email }
+}
+
+func get_student_mark_for_lab(id string, course string, lab string, db redis.Client) (uint, error) {
+	lab_id, err := strconv.ParseUint(lab, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	markv, err := get_marks(course, lab_id, id, db)
+	if err != nil {
+		return 0, err
+	}
+	mark := markv[0]
+	var total_mark uint
+	for _, v := range mark {
+		total_mark += v
+	}
+	return total_mark, nil
+}
+
+func get_student_ids(course string, merge bool, db redis.Client) (ids []string, err error) {
+	if !merge {
+		return db.Smembers("course:"+course+":students")
+	} else {
+		aliases, err := get_aliases(course, db)
+		if err != nil {
+			return nil, err
+		}
+		prim_course_stu_ids, err := get_student_ids(course, false, db)
+		if err != nil {
+			return nil, err
+		}
+		// Is Rob Pike so retarded? WTF?!! No generics?!!!
+		prim_course_stu_ids_conv := make([]interface{}, len(prim_course_stu_ids))
+		for i, v := range prim_course_stu_ids {
+			prim_course_stu_ids_conv[i] = interface{}(v)
+		}
+		all_stu_ids := mapset.NewSetFromSlice(prim_course_stu_ids_conv)
+		for _, alias := range aliases {
+			alias_stu_ids, err := get_student_ids(alias, false, db)
+			if err != nil {
+				return nil, err
+			}
+			alias_stu_ids_conv := make([]interface{}, len(alias_stu_ids))
+			for i, v := range alias_stu_ids {
+				alias_stu_ids_conv[i] = interface{}(v)
+			}
+			all_stu_ids = all_stu_ids.Union(
+				mapset.NewSetFromSlice(alias_stu_ids_conv))
+		}
+		all_stu_ids_ifce := all_stu_ids.ToSlice()
+		all_stu_ids_str := make([]string, len(all_stu_ids_ifce))
+		for i, v := range all_stu_ids_ifce {
+			all_stu_ids_str[i] = v.(string)
+		}
+		return all_stu_ids_str, nil
+	}
 }
 
 // POST /course/:course/update-student-list
@@ -402,25 +465,43 @@ func UpdateStudentListHandler(req Request) Response {
 		if v.Name == "" || v.Upi == "" || v.Id == "" {
 			continue
 		}
-		add_student_to_course(v, course, req.db)
+		add_student_to_course(v, course, req.primary_course, req.db)
 	}
 	return Response { msg : "Successfully updated student list for course " + course }
 }
 
-// POST /course/:course/get-student-list
+// POST /course/:course/get-student-list[?lab=1][&merge=true]
 func GetStudentListHandler(req Request) Response {
 	course := req.course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
-	ids, err := req.db.Smembers("course:"+course+":students")
+	merge := false
+	mergev, ok := req.query["merge"]
+	if ok && mergev[0] == "true" {
+		merge = true
+	}
+	if merge {
+		course = req.primary_course
+	}
+	ids, err := get_student_ids(course, merge, req.db)
 	if err != nil {
 		return Response { code : BadRequest,
 			msg : "Failed to access student list for course " + course + ":" + err.Error() }
 	}
+	lab := ""
+	labv, ok := req.query["lab"]
+	if ok {
+		lab = labv[0]
+	}
 	obj := make([]StudentInfo, len(ids))
 	for i, id := range ids {
 		obj[i] = get_student_info(id, req.db)
+		if lab != "" {
+			mark, err := get_student_mark_for_lab(id, course, lab, req.db)
+			obj[i].Marked = err != nil
+			obj[i].TotalMark = mark
+		}
 	}
 	reply, e := json.Marshal(obj)
 	if e != nil {
@@ -433,14 +514,8 @@ func GetStudentListHandler(req Request) Response {
 func is_access_allowed(req *Request) bool {
 	user := req.user
 	course := req.course
-	aliased_to, _ := req.db.Get("course:"+course+":aliased-to")
-	primary_course := course
-	if aliased_to != "" {
-		primary_course = aliased_to
-	}
-	req.primary_course = primary_course
 	is_admin, _ := req.db.Sismember("admins", user)
-	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", primary_course)
+	is_my_course, _ := req.db.Sismember("user:"+user+":primary-courses", req.primary_course)
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
 	if req.ops == "get" {
