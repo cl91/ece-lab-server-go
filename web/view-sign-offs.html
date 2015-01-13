@@ -46,7 +46,7 @@
 		<div id="student-info"></div>
 		<h3>Lab:</h3>
 		<div id="lab-info"></div>
-		<h3>Sign-offs: (Larger id means older.)</h3>
+		<h3>Sign-offs:</h3>
 		<div id="sign-offs"></div>
 	    </div>
 
@@ -101,14 +101,18 @@
 	<script id="sign-offs-template" type="text/template">
 	    <table class="table table-striped">
 		<thead>
-		    <td>Id</td>
+		    <!--
+		    <td>Version</td>
+		    -->
 		    <td>Mark</td>
 		</thead>
 		<tbody>
 		    {{marks}}
 		    <tr>
+			<!--
 			<td>{{id}}</td>
-			<td>
+			-->
+			<td class="{{class}}">
 			    {{texts}}
 			    <p>{{.}}</p>
 			    {{/texts}}
