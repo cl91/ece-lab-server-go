@@ -76,7 +76,7 @@ func ParseUser(req Request) string {
 }
 
 func ParsePrimaryCourse(req Request) string {
-	aliased_to, _ := req.db.Get("course:"+course+":aliased-to")
+	aliased_to, _ := req.db.Get("course:"+req.course+":aliased-to")
 	primary_course := req.course
 	if aliased_to != "" {
 		primary_course = aliased_to
