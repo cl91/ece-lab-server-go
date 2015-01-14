@@ -70,14 +70,6 @@
 			</div>
 		    </div>
 
-		    <div class="row small" style="margin-top:10px">
-			<div class="col-md-2"></div>
-			<div class="text-center col-md-7">
-			    Note: If user does not exist, a new user will be created and have password
-			    default to its username. The marker can then log in to change it.
-			</div>
-			<div class="col-md-3"></div>
-		    </div>
 		    <label id="error"></label>
 		    <div class="row">
 			<div class="col-md-6"></div>
@@ -115,7 +107,7 @@
 			 document.location = "edit-markers.html?course="+course.toUpperCase()
 		     },
 		     error : function(jqxhr, status, error) {
-			 $('#error').text('Failed to add new aliased course: ' + jqxhr.responseText)
+			 $('#error').text('Failed to add new marker: ' + jqxhr.responseText)
 		     }
 		 })
 		 return false

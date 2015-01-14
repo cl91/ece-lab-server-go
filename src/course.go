@@ -133,28 +133,28 @@ func NewMarkerHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Need marker name" }
 	}
 	name := namev[0]
-	course := req.course
+	passv, ok := req.query["pass"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need marker password" }
+	}
+	pass := passv[0]
+	course := req.primary_course
 	if course == "" {
 		return Response { code : BadRequest, msg : "Need course name" }
 	}
 
 	user_exists, _ := req.db.Sismember("users", name)
-	if !user_exists {
-		req.db.Sadd("users", name)
-		req.db.Hset("user:"+name, "pass", name)
-		req.db.Hset("user:"+name, "type", "marker")
-		req.db.Sadd("user:"+name+":primary-courses", course)
+	if user_exists {
+		return Response { code : BadRequest, msg : "User " + name + " exists." }
 	}
 
-	r, _ := req.db.Sadd("course:"+course+":markers", name)
-	if r {
-		req.db.Srem("course:"+course+":disabled-markers", name)
-		req.db.Hset("user:"+name, "type", "marker")
-		return Response { msg : "Added marker " + name + " for course " + course }
-	} else {
-		return Response { code : ServerError,
-			msg : "Failed to add marker " + name + " for course " + course }
-	}
+	req.db.Sadd("users", name)
+	req.db.Hset("user:"+name, "pass", pass)
+	req.db.Hset("user:"+name, "type", "marker")
+	req.db.Sadd("user:"+name+":primary-courses", course)
+	req.db.Sadd("course:"+course+":markers", name)
+	req.db.Srem("course:"+course+":disabled-markers", name)
+	return Response { msg : "Added marker " + name + " for course " + course }
 }
 
 // POST /course/:course/disable-marker?name=odep012
