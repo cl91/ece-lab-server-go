@@ -11,6 +11,7 @@ func AdminHandler(req Request) Response {
 	}
 	mux := make(Mux)
 	mux["new"] = NewAdminHandler
+	mux["passwd"] = AdminPasswdHandler
 	mux["del"] = DelAdminHandler
 	mux["get"] = GetAdminHandler
 	return HandleMux(mux, req.ops, req)
@@ -19,13 +20,16 @@ func AdminHandler(req Request) Response {
 func NewAdminHandler(req Request) Response {
 	namev, ok1 := req.query["name"];
 	passv, ok2 := req.query["pass"];
-	fullnamev, _ := req.query["fullname"]
+	fullnamev, ok3 := req.query["fullname"]
 	if (!ok1 || !ok2) {
 		return Response { code : BadRequest, msg : "Need admin name and password" }
 	}
 	name := namev[0]
 	pass := passv[0]
-	fullname := fullnamev[0]
+	fullname := ""
+	if ok3 {
+		fullname = fullnamev[0]
+	}
 
 	user_exists, _ := req.db.Sismember("users", name)
 	if user_exists {
@@ -45,6 +49,24 @@ func NewAdminHandler(req Request) Response {
 	} else {
 		return Response { code : ServerError, msg : "Failed to add admin " + name }
 	}
+}
+
+func AdminPasswdHandler(req Request) Response {
+	namev, ok1 := req.query["name"];
+	passv, ok2 := req.query["pass"];
+	if (!ok1 || !ok2) {
+		return Response { code : BadRequest, msg : "Need admin name and new password" }
+	}
+	name := namev[0]
+	pass := passv[0]
+
+	user_exists, _ := req.db.Sismember("users", name)
+	if !user_exists {
+		return Response { code : BadRequest, msg : "User " + name + " does not exist" }
+	}
+	
+	req.db.Hset("user:"+name, "pass", pass)
+	return Response { msg : "Updated password for admin " + name }
 }
 
 func DelAdminHandler(req Request) Response {
@@ -68,16 +90,20 @@ func DelAdminHandler(req Request) Response {
 type AdminInfo struct {
 	Name string `json:"name"`
 	Fullname string `json:"fullname"`
-	Courses []string `json:"courses"`
+	Courses []CourseInfo `json:"courses"`
 }
 
-func get_admin_info(db redis.Client, admin string) AdminInfo {
-	courses, _ := db.Smembers("user:"+admin+":courses")
+func get_admin_info(admin string, db redis.Client) (AdminInfo, error) {
+	courses, err := get_all_courses(admin, db)
+	if err != nil {
+		return AdminInfo {}, err
+	}
 	fullname, _ := db.Hget("user:"+admin, "fullname")
 	if fullname == "" {
 		fullname = admin
 	}
-	return AdminInfo { Name:admin, Fullname:fullname, Courses:courses }
+	return AdminInfo { Name:admin, Fullname:fullname,
+		Courses:courses }, nil
 }
 
 func GetAdminHandler(req Request) Response {
@@ -87,8 +113,8 @@ func GetAdminHandler(req Request) Response {
 			msg : "Db access failed: " + err.Error() }
 	}
 	info := make([]AdminInfo, len(admins), len(admins))
-	for i, v := range admins {
-		info[i] = get_admin_info(req.db, v)
+	for i, name := range admins {
+		info[i], _ = get_admin_info(name, req.db)
 	}
 	reply, err1 := json.Marshal(info)
 	if err1 != nil {

@@ -60,14 +60,26 @@ func get_course_info(name string, db redis.Client) CourseInfo {
 		Labinfo : get_lab_info(name, db) }
 }
 
-// POST /course/get
-func GetCourseHandler(req Request) Response {
-	courses, _ := req.db.Smembers("user:"+req.user+":primary-courses")
+func get_all_courses(user string, db redis.Client) ([]CourseInfo, error) {
+	courses, err := db.Smembers("user:"+user+":primary-courses")
+	if err != nil {
+		return nil, err
+	}
 	obj := make([]CourseInfo, len(courses), len(courses))
 	for i, v := range courses {
-		obj[i] = get_course_info(v, req.db)
+		obj[i] = get_course_info(v, db)
 	}
-	reply, err := json.Marshal(obj)
+	return obj, nil
+}
+
+// POST /course/get
+func GetCourseHandler(req Request) Response {
+	courses, err := get_all_courses(req.user, req.db)
+	if err != nil {
+		return Response { code : BadRequest,
+			msg : "Error getting course information" }
+	}
+	reply, err := json.Marshal(courses)
 	if err != nil {
 		return Response { code : ServerError,
 			msg : "Error marshalling json objects" }

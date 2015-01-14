@@ -49,9 +49,27 @@
 	    </div>
 	</div>
 
+	<script id="template" type="text/template">
+	    <li class="list-group-item">
+		{{fullname}} ({{name}})
+		<button class="btn btn-small btn-warning passwd-admin" data-id="{{name}}">
+		    Edit
+		</button>
+		<p></p>
+		<p>Managing courses:</p>
+		<div class="course-list">
+		    {{courses}}
+		    <p>{{name}}{{aliases}}/{{.}}{{/aliases}}
+		    </p>
+		    {{/courses}}
+		</div>
+	    </li>
+	</script>
+	
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
-	<script src="js/jquery.dialog.js"></script>
+	<script src="js/markup.min.js"></script>
+	<script src="js/common.js"></script>
 
 	<script>
 	 $.ajax({
@@ -63,44 +81,18 @@
 		     var obj = data[i]
 		     var name = obj.name
 		     var fullname = obj.fullname ? obj.fullname : name
-		     var courses = obj.courses
-		     var html = '<li class="list-group-item">' + fullname + ' (' + name + ')'
-//		     + '<button class="btn btn-small btn-danger delete-admin" id="delete-'
-//		     + name + '">Delete</button>'
-		     + ' <button class="btn btn-small btn-warning passwd-admin" data-id="'
-		     + name + '">Edit</button>'
-		     html += '<div class="course-list">Courses: '
-		     if (courses.length) {
-			 html += courses[0].toUpperCase()
-			 if (courses.length > 1) {
-			     for (var h = 1; h < courses.length; h++) {
-				 html += ', ' + courses[h].toUpperCase()
-			     }
+		     for (var j = 0; j < obj.courses.length; j++) {
+			 obj.courses[j].name = obj.courses[j].name.toUpperCase()
+			 for (var k = 0; k < obj.courses[j].aliases.length; k++) {
+			     obj.courses[j].aliases[k] = obj.courses[j].aliases[k].toUpperCase()
 			 }
 		     }
-		     html += '</div></li>'
-		     $('#admin-list').append(html)
-		     $("button[id='delete-"+name+"']").click(function(name) {
-			 return function() {
-			     $.dialog.confirm("Delete Admin",
-					      "<p>Do you really want to delete admin "+name
-					      + "?</p><p>This cannot be reverted.</p>", function() {
-						  $.ajax({
-						      url : 'api/admin/del?name='+encodeURI(name),
-						      type : 'POST',
-						      success : function() {
-							  location.reload();
-						      },
-						      error : function(jqxhr, status, error) {
-							  $.dialog.alert("Error",
-									 "Failed to delete admin "
-									 +name+": " + jqxhr.responseText);
-						      }
-						  })
-					      })
-			 }
-		     }(name))
+		     $('#admin-list').append(Mark.up(get_template("template"), obj))
 		 }
+		 $('.passwd-admin').click(function() {
+		     var name = $(this).data('id')
+		     document.location = "new-admin.html?name=" + name
+		 })
 	     },
 	     error : function(jqxhr, status, error) {
 		 if (error) {

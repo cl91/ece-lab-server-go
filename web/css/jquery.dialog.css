@@ -30,7 +30,7 @@ body {
 }
 
 .modal-content {
-  position: relative;
+  position: fixed;
   outline: 0 none;
   border: 1px solid rgba(0,0,0,0.2);
   border-radius: 6px;
@@ -49,7 +49,7 @@ body {
 }
 
 .modal-body {
-  position: relative;
+  position: fixed;
   padding: 15px
 }
 

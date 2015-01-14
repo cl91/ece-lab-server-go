@@ -165,7 +165,6 @@
 	<script>
 	 var course = get_parameter_by_name('course')
 	 var id = get_parameter_by_name('id')
-	 $('#lab-id').text(id)
 	 $('#course').text(course.toUpperCase())
 
 	 $('#submit').click(function() {
@@ -208,10 +207,6 @@
 		 }
 	     }
 	     return false
-	 }
-
-	 function get_max_array(a) {
-	     return Math.max.apply(null, a);
 	 }
 
 	 function add_new_criterion(submark, criterion) {

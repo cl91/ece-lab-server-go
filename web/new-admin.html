@@ -39,20 +39,20 @@
 	<div class="container">
 
 	    <div class="jumbotron">
-		<div class="lead large-text text-center">Add New Administrator</div>
+		<div class="lead large-text text-center" id="title">Add New Course Coordinator</div>
 		<form class="form-signin text-center" role="form" id="new-admin">
-		    <div class="row">
+		    <div class="row" id="username-div">
 			<div class="col-md-2"></div>
-			<div class="col-md-2">
+			<div class="col-md-2 text-right">
 			    <label for="name">Username</label>
 			</div>
 			<div class="col-md-5">
 			    <input type="text" id="name" class="form-control" name="name" required autofocus>
 			</div>
 		    </div>
-		    <div class="row">
+		    <div class="row" id="fullname-div">
 			<div class="col-md-2"></div>
-			<div class="col-md-2">
+			<div class="col-md-2 text-right">
 			    <label for="name">Full Name</label>
 			</div>
 			<div class="col-md-5">
@@ -60,20 +60,25 @@
 				   name="fullname" required autofocus>
 			</div>
 		    </div>
-		    <div class="row">
-			<div class="col-md-2"></div>
-			<div class="col-md-2">
-			    <label for="pass">Password</label>
+		    <div class="row" id="password-div">
+			<div class="col-md-1"></div>
+			<div class="col-md-3 text-right">
+			    <label id="pass-label" for="pass">Password</label>
 			</div>
 			<div class="col-md-5">
 			    <input type="text" id="pass" class="form-control" name="pass" required>
 			</div>
 		    </div>
 		    <label id="error"></label>
-		    <div class="row">
-			<div class="col-md-6"></div>
+		    <div class="row text-right">
+			<div class="col-md-5"></div>
+			<div class="col-md-2">
+			    <button class="btn btn-lg btn-danger btn-block" id="delete-admin">Delete</button>
+			</div>
 			<div class="col-md-2">
 			    <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+			</div>
+			<div class="col-md-2">
 			</div>
 		    </div>
 		</form>
@@ -82,13 +87,47 @@
 
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.dialog.js"></script>
 	<script src="js/jquery.form.js"></script>
+	<script src="js/common.js"></script>
 
 	<script>
+	 var name = get_parameter_by_name('name')
+	 var ops = "new"
+	 if (name) {
+	     $('#title').text('Edit Course Coordinator ' + name)
+	     $('#name').val(name)
+	     $('#fullname').val(name)
+	     $('#username-div').hide()
+	     $('#fullname-div').hide()
+	     $('#pass-label').text('New Password')
+	     ops = "passwd"
+	     $('#delete-admin').click(function() {
+		 $('#password-div').hide()
+		 $.dialog.confirm("Delete Admin",
+				  "<p>Do you really want to delete admin "+name
+				  + "?</p><p>This cannot be reverted.</p>", function() {
+				      $.ajax({
+					  url : 'api/admin/del?name='+encodeURI(name),
+					  type : 'POST',
+					  success : function() {
+					      document.location = "admin.html"
+					  },
+					  error : function(jqxhr, status, error) {
+					      $.dialog.alert("Error",
+							     "Failed to delete admin "
+							     +name+": " + jqxhr.responseText);
+					  }
+				      })
+				  })
+	     })
+	 } else {
+	     $('#delete-admin').hide()
+	 }
 	 $('#new-admin').ajaxForm({
 	     beforeSubmit : function showRequest(form_data) {
 		 var query = $.param(form_data)
-		 var url = 'api/admin/new?' + query
+		 var url = 'api/admin/' + ops + '?' + query
 		 $.ajax({
 		     url : url,
 		     type : 'POST',
@@ -96,11 +135,13 @@
 			 document.location = "admin.html"
 		     },
 		     error : function(jqxhr, status, error) {
-			 $('#error').text('Failed to add new admin: ' + jqxhr.responseText)
+			 $('#error').text('Failed to ' +
+					  (name ? 'change password of' : 'new') + ' new admin: ' +
+					  jqxhr.responseText)
 		     }
 		 })
 		 return false
-	     },
+	     }
 	 })
 	</script>
     </body>
