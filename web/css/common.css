@@ -70,3 +70,11 @@ body {
 .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
   background-color: lightblue;
 }
+
+#criteria-table > tbody > tr > td {
+    border-collapse: separate;
+    background-color : white;
+    border-style : solid;
+    border-width : 1px;
+    border-color : lightgrey;
+}
