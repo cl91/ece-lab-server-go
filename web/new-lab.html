@@ -90,7 +90,7 @@
 			</div>
 		    </div>
 
-		    <div class="row">
+		    <div class="row" id="mtype-div">
 			<div class="col-md-2"></div>
 			<div class="col-md-2 text-right">
 			    <label>Marking Type</label>
@@ -263,6 +263,11 @@
 			 $('#criteria-div').hide()
 		     }
 		     $('#total_mark').val(obj.total_mark)
+		     if (is_active_marking(data.active_ids, id) == "Yes") {
+			 $('#mtype-div').hide()
+			 $('#total-mark-div').hide()
+			 $('#criteria-div').hide()
+		     }
 		 } else if (get_max_array(data.ids)+1 == id) {
 		     var max_id = get_max_array(data.ids)
 		     var week = data.labs[max_id].week
