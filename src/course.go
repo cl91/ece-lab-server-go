@@ -405,21 +405,24 @@ func get_student_info(id string, db redis.Client) StudentInfo {
 	return StudentInfo { Name : name, Upi : upi, Id : id, Email : email }
 }
 
-func get_student_mark_for_lab(id string, course string, lab string, db redis.Client) (uint, error) {
+func get_student_mark_for_lab(id string, course string, lab string, db redis.Client) (uint, bool) {
 	lab_id, err := strconv.ParseUint(lab, 10, 32)
 	if err != nil {
-		return 0, err
+		return 0, false
 	}
 	markv, err := get_marks(course, lab_id, id, db)
 	if err != nil {
-		return 0, err
+		return 0, false
 	}
-	mark := markv[0]
 	var total_mark uint
-	for _, v := range mark {
-		total_mark += v
+	if len(markv) > 0 && len(markv[0]) > 0 {
+		for _, v := range markv[0] {
+			total_mark += v
+		}
+		return total_mark, true
+	} else {
+		return 0, false
 	}
-	return total_mark, nil
 }
 
 func get_student_ids(course string, merge bool, db redis.Client) (ids []string, err error) {
@@ -510,8 +513,8 @@ func GetStudentListHandler(req Request) Response {
 	for i, id := range ids {
 		obj[i] = get_student_info(id, req.db)
 		if lab != "" {
-			mark, err := get_student_mark_for_lab(id, course, lab, req.db)
-			obj[i].Marked = err != nil
+			mark, marked := get_student_mark_for_lab(id, course, lab, req.db)
+			obj[i].Marked = marked
 			obj[i].TotalMark = mark
 		}
 	}
