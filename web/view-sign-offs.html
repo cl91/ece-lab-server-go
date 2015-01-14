@@ -101,17 +101,11 @@
 	<script id="sign-offs-template" type="text/template">
 	    <table class="table table-striped">
 		<thead>
-		    <!--
-		    <td>Version</td>
-		    -->
 		    <td>Mark</td>
 		</thead>
 		<tbody>
 		    {{marks}}
 		    <tr>
-			<!--
-			<td>{{id}}</td>
-			-->
 			<td class="{{class}}">
 			    {{texts}}
 			    <p>{{.}}</p>
@@ -126,30 +120,9 @@
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/markup.min.js"></script>
+	<script src="js/common.js"></script>
 
 	<script>
-	 function get_parameter_by_name(name) {
-	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-             results = regex.exec(location.search);
-	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-	 }
-
-	 function get_max_array(a) {
-	     return Math.max.apply(null, a);
-	 }
-
-	 function is_active_marking(ids, id) {
-	     if (ids.length) {
-		 for (var i = 0; i < ids.length; i++) {
-		     if (ids[i] == id) {
-			 return "Yes"
-		     }
-		 }
-	     }
-	     return "No"
-	 }
-
 	 function show_lab_info(template, show_sign_offs) {
 	     var course = get_parameter_by_name('course')
 	     var lab_id = get_parameter_by_name('lab')
@@ -187,8 +160,7 @@
 		 type : 'POST',
 		 dataType : 'json',
 		 success : function(data) {
-		     var template = document.getElementById("sign-offs-template")
-						      .firstChild.textContent
+		     var template = get_template("sign-offs-template")
 		     var marks = []
 		     for (var i = 0; i < data.length; i++) {
 			 mark = data[i]
@@ -239,8 +211,8 @@
 	     })
 	 }
 
-	 var student_template = document.getElementById("student-template").firstChild.textContent
-	 var lab_template = document.getElementById("lab-template").firstChild.textContent
+	 var student_template = get_template("student-template")
+	 var lab_template = get_template("lab-template")
 
 	 show_lab_info(lab_template, show_sign_offs)
 	 show_student_info(student_template)

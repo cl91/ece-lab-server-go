@@ -52,6 +52,7 @@
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/markup.min.js"></script>
+	<script src="js/common.js"></script>
 
 	<script id="list-template" type="text/template">
 	    <table class="table table-striped table-hover">
@@ -77,13 +78,6 @@
 	</script>
 
 	<script>
-	 function get_parameter_by_name(name) {
-	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-             results = regex.exec(location.search);
-	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-	 }
-
 	 var course = get_parameter_by_name('course')
 	 var lab_id = get_parameter_by_name('lab')
 	 if (lab_id) {
@@ -91,7 +85,7 @@
 	 }
 
 	 function show_student_list(list) {
-	     var template = document.getElementById("list-template").firstChild.textContent
+	     var template = get_template("list-template")
 	     
 	     $('#field-table').html(Mark.up(template, { students : list }))
 	     $('.clickable').click(function() {

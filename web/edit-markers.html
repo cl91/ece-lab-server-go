@@ -51,11 +51,6 @@
 
 	</div>
 
-	<script src="js/jquery.min.js"></script>
-	<script src="js/bootstrap.min.js"></script>
-	<script src="js/markup.min.js"></script>
-	<script src="js/jquery.dialog.js"></script>
-
 	<script id="marker-template" type="text/template">
 	    <table class="table table-striped">
 		<thead>
@@ -80,21 +75,20 @@
 	    </table>
 	</script>
 	
-	<script>
-	 function get_parameter_by_name(name) {
-	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-             results = regex.exec(location.search);
-	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-	 }
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/markup.min.js"></script>
+	<script src="js/jquery.dialog.js"></script>
+	<script src="js/common.js"></script>
 
+	<script>
 	 var course = get_parameter_by_name('course')
 	 var title = 'Edit Markers for ' + course
 	 $('#title').text(title)
 	 course = course.toLowerCase()
 
 	 $('#marker-template').hide()
-	 var template = document.getElementById("marker-template").firstChild.textContent
+	 var template = get_template("marker-template")
 	 $.ajax({
 	     url : 'api/course/'+course+'/get-markers',
 	     type : 'POST',

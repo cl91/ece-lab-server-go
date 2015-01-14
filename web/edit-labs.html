@@ -83,37 +83,16 @@
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/markup.min.js"></script>
+	<script src="js/common.js"></script>
 
 	<script>
-	 function get_parameter_by_name(name) {
-	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-             results = regex.exec(location.search);
-	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-	 }
-
-	 function get_max_array(a) {
-	     return Math.max.apply(null, a);
-	 }
-
-	 function is_active_marking(ids, id) {
-	     if (ids.length) {
-		 for (var i = 0; i < ids.length; i++) {
-		     if (ids[i] == id) {
-			 return "Yes"
-		     }
-		 }
-	     }
-	     return "No"
-	 }
-
 	 var course_upper = get_parameter_by_name('course')
 	 var title = 'Edit Labs for ' + course_upper
 	 var course = course_upper.toLowerCase()
 	 $('#title').text(title)
 
 	 $('#labs-template').hide()
-	 var template = document.getElementById("labs-template").firstChild.textContent
+	 var template = get_template("labs-template")
 	 $.ajax({
 	     url : 'api/course/'+course+'/get-labs',
 	     type : 'POST',

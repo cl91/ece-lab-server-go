@@ -50,17 +50,6 @@
 			</div>
 		    </div>
 
-		    <!--
-		    <div class="row">
-			<div class="col-md-2"></div>
-			<div class="col-md-2 text-right">
-			    <label for="id">Id</label>
-			</div>
-			<div class="col-md-5 text-left" id="lab-id">
-			</div>
-		    </div>
-		    -->
-
 		    <div class="row">
 			<div class="col-md-2"></div>
 			<div class="col-md-2 text-right">
@@ -171,15 +160,9 @@
 	<script src="js/date.js"></script>
 	<script src="js/jquery.tabletojson.min.js"></script>
 	<script src="js/editable-table.js"></script>
+	<script src="js/common.js"></script>
 
 	<script>
-	 function get_parameter_by_name(name) {
-	     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-	     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-             results = regex.exec(location.search);
-	     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-	 }
-
 	 var course = get_parameter_by_name('course')
 	 var id = get_parameter_by_name('id')
 	 $('#lab-id').text(id)
