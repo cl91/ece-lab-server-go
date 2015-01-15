@@ -415,8 +415,8 @@ func get_student_mark_for_lab(id string, course string, lab string, db redis.Cli
 		return 0, false
 	}
 	var total_mark uint
-	if len(markv) > 0 && len(markv[0]) > 0 {
-		for _, v := range markv[0] {
+	if len(markv) > 0 && len(markv[0].Mark) > 0 {
+		for _, v := range markv[0].Mark {
 			total_mark += v
 		}
 		return total_mark, true

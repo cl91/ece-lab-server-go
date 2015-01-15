@@ -102,14 +102,22 @@
 	    <table class="table table-striped">
 		<thead>
 		    <td>Mark</td>
+		    <td>Date</td>
+		    <td>Marker</td>
 		</thead>
 		<tbody>
 		    {{marks}}
-		    <tr>
-			<td class="{{class}}">
+		    <tr class="{{class}}">
+			<td>
 			    {{texts}}
 			    <p>{{.}}</p>
 			    {{/texts}}
+			</td>
+			<td>
+			    {{date}}
+			</td>
+			<td>
+			    {{marker}}
 			</td>
 		    </tr>
 		    {{/marks}}
@@ -156,14 +164,17 @@
 
 	 function show_sign_offs(lab, uid, course) {
 	     $.ajax({
-		 url : 'api/mark/'+course+'/get-marked?lab='+lab.id+'&uid='+uid,
+		 url : 'api/mark/'+course+'/get-marks?lab='+lab.id+'&uid='+uid,
 		 type : 'POST',
 		 dataType : 'json',
 		 success : function(data) {
 		     var template = get_template("sign-offs-template")
 		     var marks = []
 		     for (var i = 0; i < data.length; i++) {
-			 mark = data[i]
+			 mark = data[i].mark
+			 if (!mark) {
+			     continue
+			 }
 			 texts = []
 			 if (lab.mtype == 'criteria') {
 			     for (var j = 0; j < mark.length; j++) {
@@ -176,7 +187,7 @@
 			     var symb = mark[0] == 0 ? '&#10007;' : '&#10004;'
 			     texts[0] = symb + ' Student attended lab.'
 			 }
-			 marks[i] = { id : i+1, texts : texts }
+			 marks[i] = { texts : texts, date : data[i].date, marker : data[i].marker }
 		     }
 		     $('#sign-offs').html(Mark.up(template, { marks : marks }))
 		 },

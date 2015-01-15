@@ -1,6 +1,7 @@
 package main
 
 import (
+	"time"
 	"strconv"
 	"encoding/json"
 	"./redis"
@@ -12,7 +13,7 @@ func MarkHandler(req Request) Response {
 	}
 	mux := make(Mux)
 	mux["upload"] = UploadMarkHandler
-	mux["get-marked"] = GetMarkedHandler
+	mux["get-marks"] = GetMarksHandler
 	return HandleMux(mux, req.ops, req)
 }
 
@@ -52,15 +53,15 @@ func UploadMarkHandler(req Request) Response {
 	lab := lab_info.Labs[id]
 	if ((lab.MarkingType == "number" || lab.MarkingType == "attendance") && len(markv) == 1) ||
 		(lab.MarkingType == "criteria" && len(markv) == len(lab.Criteria)) {
-		update_mark(course, id, uid, string(req.body), req.db)
+		update_mark(course, id, uid, markv, req)
 		return Response { msg : "Marked student " + uid }
 	} else {
 		return Response { code : BadRequest, msg : "Marking type mismatch" }
 	}
 }
 
-// POST /mark/:course/get-marked?lab=2&uid=6351823
-func GetMarkedHandler(req Request) Response {
+// POST /mark/:course/get-marks?lab=2&uid=6351823
+func GetMarksHandler(req Request) Response {
 	course := req.course
 	labv, ok := req.query["lab"]
 	if !ok {
@@ -76,28 +77,39 @@ func GetMarkedHandler(req Request) Response {
 	}
 	uid := uidv[0]
 	markv, err := get_marks(course, id, uid, req.db)
+	if err != nil {
+		return Response { code : ServerError,
+			msg : "Failed to get marks: " + err.Error() }
+	}
 	reply, _ := json.Marshal(markv)
 	return Response { msg : string(reply) }
 }
 
-func update_mark(course string, id uint64, uid string, marks string, db redis.Client) {
-	db.Lpush("student:"+uid+":course:"+course+":lab:"+
-		strconv.FormatUint(id, 10), marks)
+type Mark struct {
+	Mark []uint `json:"mark"`
+	Date string `json:"date"`
+	Marker string `json:"marker"`
 }
 
-func get_marks(course string, id uint64, uid string, db redis.Client) (markv [][]uint, err error) {
+func update_mark(course string, id uint64, uid string, markv []uint, req Request) {
+	const layout = "Monday, January 2, 2006 at 3:04pm"
+	mark := Mark { Mark : markv, Date : time.Now().Format(layout),
+		Marker : req.user }
+	mark_json, _ := json.Marshal(mark)
+	req.db.Lpush("student:" + uid + ":course:" + course + ":lab:" +
+		strconv.FormatUint(id, 10), string(mark_json))
+}
+
+func get_marks(course string, id uint64, uid string, db redis.Client) (markv []Mark, err error) {
 	mark_jsonv, err := db.Lrange("student:"+uid+":course:"+course+":lab:"+
 		strconv.FormatUint(id, 10), 0, -1)
 	if err != nil {
 		return nil, err
 	}
-	markv = make([][]uint, len(mark_jsonv))
+	markv = make([]Mark, len(mark_jsonv))
 	for i, m := range mark_jsonv {
-		mark := make([]uint, 0)
-		err = json.Unmarshal([]byte(m), &mark)
-		if err != nil {
-			return nil, err
-		}
+		mark := Mark {}
+		_ = json.Unmarshal([]byte(m), &mark)
 		markv[i] = mark
 	}
 	return markv, nil
