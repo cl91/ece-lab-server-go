@@ -20,6 +20,7 @@ func CourseHandler(req Request) Response {
 	mux["new-marker"] = NewMarkerHandler
 	mux["enable-marker"] = EnableMarkerHandler
 	mux["disable-marker"] = DisableMarkerHandler
+	mux["reset-marker-passwd"] = ResetMarkerPasswdHandler
 	mux["get-markers"] = GetMarkersHandler
 	mux["get-labs"] = GetLabsHandler
 	mux["edit-lab"] = EditLabHandler
@@ -212,6 +213,33 @@ func EnableMarkerHandler(req Request) Response {
 	} else {
 		return Response { code : BadRequest,
 			msg : "User " + name + " is not a disabled LOL marker for course " + course }
+	}
+}
+
+// POST /course/:course/reset-marker-passwd?name=abc&pass=abc
+func ResetMarkerPasswdHandler(req Request) Response {
+	namev, ok := req.query["name"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need marker name" }
+	}
+	name := namev[0]
+	passv, ok := req.query["pass"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need new password" }
+	}
+	pass := passv[0]
+	course := req.course
+	if course == "" {
+		return Response { code : BadRequest, msg : "Need course name" }
+	}
+	is_marker, _ := req.db.Sismember("course:"+course+":markers", name)
+	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", name)
+	if is_marker || is_disabled_marker {
+		req.db.Hset("user:"+name, "pass", pass)
+		return Response { msg : "Resetted password for marker " + name + " of course " + course }
+	} else {
+		return Response { code : BadRequest,
+			msg : "User " + name + " is not a marker for course " + course }
 	}
 }
 

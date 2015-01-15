@@ -66,7 +66,7 @@
 			<td>
 			    <button class="btn btn-{{button_state}} {{button_class}}"
 				    data-name="{{name}}" type="button">{{button_name}}</button>
-			    <button class="btn btn-warning"
+			    <button class="btn btn-warning passwd-button"
 				    data-name="{{name}}" type="button">Change Password</button>
 			</td>
 		    </tr>
@@ -165,6 +165,11 @@
 						  }
 					      })
 					  })
+		     })
+
+		     $('.passwd-button').click(function() {
+			 var name = $(this).data("name")
+			 document.location = "passwd-marker.html?course="+course+"&name="+name
 		     })
 		 }
 	     },
