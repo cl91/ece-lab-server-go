@@ -38,18 +38,18 @@
 
 	<div class="container">
 
-	    <h1 class="text-center" id="title">View Lab Sign-offs</h1>
+	    <h1 class="text-center" id="title">Add New Lab Sign-off</h1>
 
 	    <div class="index-page-body">
-		<div id="error"></div>
 		<h3>Student:</h3>
 		<div id="student-info"></div>
 		<h3>Lab:</h3>
 		<div id="lab-info"></div>
-		<h3>Sign-offs:</h3>
-		<button class="btn btn-lg btn-primary" id="new-sign-off"
-			type="button">Add New Sign-off</button>
-		<div id="sign-offs"></div>
+		<h3>New sign-off:</h3>
+		<div id="sign-off"></div>
+		<div id="error"></div>
+		<button class="btn btn-lg btn-primary" id="submit"
+			type="button">Submit</button>
 	    </div>
 
 	</div>
@@ -100,31 +100,29 @@
 	    </table>
 	</script>
 
-	<script id="sign-offs-template" type="text/template">
-	    <table class="table">
-		<thead>
-		    <td>Mark</td>
-		    <td>Date</td>
-		    <td>Marker</td>
-		</thead>
-		<tbody>
-		    {{marks}}
-		    <tr class="{{class}}">
-			<td>
-			    {{texts}}
-			    <p>{{.}}</p>
-			    {{/texts}}
-			</td>
-			<td>
-			    {{date}}
-			</td>
-			<td>
-			    {{marker}}
-			</td>
-		    </tr>
-		    {{/marks}}
-		</tbody>
-	    </table>
+	<script id="number-template" type="text/template">
+	    <div class="row">
+		<div class="col-md-1 text-right">
+		    <label>Mark:</label>
+		</div>
+		<div class="col-md-4">
+		    <select id="mark">
+			{{range}}
+			<option value="{{.}}">{{.}}</option>
+			{{/range}}
+		    </select>
+		</div>
+	    </div>
+	</script>
+
+	<script id="criteria-template" type="text/template">
+	    {{range}}
+	    <input type="checkbox" id="crit-{{id}}" data-id="{{id}}">{{text}}<br>
+	    {{/range}}
+	</script>
+
+	<script id="attendance-template" type="text/template">
+	    <input type="checkbox" id="attend">Student attended the lab.<br>
 	</script>
 
 	<script src="js/jquery.min.js"></script>
@@ -133,7 +131,7 @@
 	<script src="js/common.js"></script>
 
 	<script>
-	 function show_lab_info(template, show_sign_offs) {
+	 function show_lab_info(template, add_new_sign_off) {
 	     var course = get_parameter_by_name('course')
 	     var lab_id = get_parameter_by_name('lab')
 	     var student = get_parameter_by_name('student')
@@ -155,47 +153,12 @@
 		     obj.active = is_active_marking(data.active_ids, lab_id)
 		     obj.id = lab_id
 		     $('#lab-info').html(Mark.up(template, obj))
-		     show_sign_offs({ id:lab_id, mtype:mtype, criteria:obj.criteria },
-				    student, course)
+		     add_new_sign_off({ id:lab_id, mtype:mtype, total_mark : obj.total_mark,
+					criteria:obj.criteria },
+				      student, course)
 		 },
 		 error : function(jqxhr, status, error) {
 		     $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
-		 }
-	     })
-	 }
-
-	 function show_sign_offs(lab, uid, course) {
-	     $.ajax({
-		 url : 'api/mark/'+course+'/get-marks?lab='+lab.id+'&uid='+uid,
-		 type : 'POST',
-		 dataType : 'json',
-		 success : function(data) {
-		     var template = get_template("sign-offs-template")
-		     var marks = []
-		     for (var i = 0; i < data.length; i++) {
-			 mark = data[i].mark
-			 if (!mark) {
-			     continue
-			 }
-			 texts = []
-			 if (lab.mtype == 'criteria') {
-			     for (var j = 0; j < mark.length; j++) {
-				 var symb = mark[j] == 0 ? '&#10007;' : '&#10004;'
-				 texts[j] = symb + ' ' + lab.criteria[j].text
-			     }
-			 } else if (lab.mtype == 'number') {
-			     texts[0] = String(mark[0])
-			 } else if (lab.mtype == 'attendance') {
-			     var symb = mark[0] == 0 ? '&#10007;' : '&#10004;'
-			     texts[0] = symb + ' Student attended lab.'
-			 }
-			 marks[i] = { texts : texts, date : data[i].date, marker : data[i].marker,
-				      class : i == 0 ? "success" : "warning" }
-		     }
-		     $('#sign-offs').html(Mark.up(template, { marks : marks }))
-		 },
-		 error : function(jqxhr, status, error) {
-		     $('#error').text('Failed to get sign-offs: ' + jqxhr.responseText)
 		 }
 	     })
 	 }
@@ -225,18 +188,70 @@
 	     })
 	 }
 
-	 var student_template = get_template("student-template")
-	 var lab_template = get_template("lab-template")
-
-	 show_lab_info(lab_template, show_sign_offs)
-	 show_student_info(student_template)
-
-	 $('#new-sign-off').click(function() {
+	 function enable_submit_button(lab, course, uid) {
 	     var course = get_parameter_by_name('course')
 	     var lab_id = get_parameter_by_name('lab')
 	     var student = get_parameter_by_name('student')
-	     document.location = "new-sign-off.html?course="+course+"&lab="+lab_id+"&student="+student
-	 })
+	     var lab_id = lab.id
+	     $('#submit').click(function() {
+		 var obj = []
+		 if (lab.mtype == "number") {
+		     obj[0] = parseInt($('#mark').val())
+		 } else if (lab.mtype == "criteria") {
+		     for (var i = 0; i < lab.criteria.length; i++) {
+			 if ($('#crit-'+i).is(":checked")) {
+			     obj[i] = lab.criteria[i].mark
+			 } else {
+			     obj[i] = 0
+			 }
+		     }
+		 } else if (lab.mtype == "attendance") {
+		     if ($('#attend').is(":checked")) {
+			 obj[0] = lab.total_mark
+		     } else {
+			 obj[0] = 0
+		     }
+		 }
+		 $.ajax({
+		     url : 'api/mark/' + course + '/upload?lab=' + lab_id + '&uid=' + uid,
+		     type : 'POST',
+		     data : JSON.stringify(obj),
+		     contentType: "application/json; charset=utf-8",
+		     success : function(jqxhr, status, error) {
+			 document.location = "view-sign-offs.html?course="+course+"&lab="+lab_id
+			 +"&student="+student
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Failed to add new sign-off: ' + jqxhr.responseText)
+		     }
+		 })
+	     })
+	 }
+
+	 function add_new_sign_off(lab, uid, course) {
+	     var tmpl = lab.mtype + "-template"
+	     var obj = {}
+	     if (lab.mtype == "number") {
+		 obj.range = []
+		 for (var i = 0; i <= lab.total_mark; i++) {
+		     obj.range[i] = String(i)
+		 }
+	     } else if (lab.mtype == "criteria") {
+		 obj.range = []
+		 for (var i = 0; i < lab.criteria.length; i++) {
+		     obj.range[i] = { id : i, text : lab.criteria[i].text }
+		 }
+	     }
+	     var template = get_template(tmpl)
+	     $('#sign-off').html(Mark.up(template, obj))
+	     enable_submit_button(lab, course, uid)
+	 }
+
+	 var student_template = get_template("student-template")
+	 var lab_template = get_template("lab-template")
+
+	 show_lab_info(lab_template, add_new_sign_off)
+	 show_student_info(student_template)
 	</script>
 
     </body>
