@@ -99,7 +99,7 @@
 	</script>
 
 	<script id="sign-offs-template" type="text/template">
-	    <table class="table table-striped">
+	    <table class="table">
 		<thead>
 		    <td>Mark</td>
 		    <td>Date</td>
@@ -187,7 +187,8 @@
 			     var symb = mark[0] == 0 ? '&#10007;' : '&#10004;'
 			     texts[0] = symb + ' Student attended lab.'
 			 }
-			 marks[i] = { texts : texts, date : data[i].date, marker : data[i].marker }
+			 marks[i] = { texts : texts, date : data[i].date, marker : data[i].marker,
+				      class : i == 0 ? "success" : "warning" }
 		     }
 		     $('#sign-offs').html(Mark.up(template, { marks : marks }))
 		 },
