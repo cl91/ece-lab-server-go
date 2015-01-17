@@ -40,16 +40,6 @@ func UploadMarkHandler(req Request) Response {
 		return Response { code : BadRequest, msg : "Invalid json object" }
 	}
 	lab_info := get_lab_info(course, req.db)
-	is_active := false
-	for _, active := range lab_info.ActiveIds {
-		if active == int(id) {
-			is_active = true
-			break
-		}
-	}
-	if !is_active {
-		return Response { code : BadRequest, msg : "Lab is not active currently" }
-	}
 	lab := lab_info.Labs[id]
 	if ((lab.MarkingType == "number" || lab.MarkingType == "attendance") && len(markv) == 1) ||
 		(lab.MarkingType == "criteria" && len(markv) == len(lab.Criteria)) {
