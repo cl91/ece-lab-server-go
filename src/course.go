@@ -185,7 +185,6 @@ func DisableMarkerHandler(req Request) Response {
 	if is_marker {
 		req.db.Sadd("course:"+course+":disabled-markers", name)
 		req.db.Srem("course:"+course+":markers", name)
-		req.db.Srem("user:"+name+":primary-courses", course)
 		return Response { msg : "Disabled marker " + name + " for course " + course }
 	} else {
 		return Response { code : BadRequest,
@@ -208,7 +207,6 @@ func EnableMarkerHandler(req Request) Response {
 	if is_disabled {
 		req.db.Srem("course:"+course+":disabled-markers", name)
 		req.db.Sadd("course:"+course+":markers", name)
-		req.db.Sadd("user:"+name+":primary-courses", course)
 		return Response { msg : "Enabled marker " + name + " for course " + course }
 	} else {
 		return Response { code : BadRequest,
