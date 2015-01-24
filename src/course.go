@@ -563,7 +563,7 @@ func is_access_allowed(req *Request) bool {
 
 	if req.ops == "get" {
 		// Admins and active markers can access /course/get
-		return !is_disabled_marker
+		return true
 	} else if req.ops == "get-labs" || req.ops == "get-student-list" {
 		// Admins and active markers can access
 		// /course/:course/get-labs and /course/:course/get-student-list
