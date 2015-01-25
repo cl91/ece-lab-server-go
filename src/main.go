@@ -19,6 +19,7 @@ type Request struct {
 	body []byte
 	query map[string] []string
 	cookies []*http.Cookie
+	req *http.Request
 	db redis.Client
 }
 
@@ -40,7 +41,7 @@ type Response struct {
 func MainHandler(w http.ResponseWriter, req *http.Request) {
 	path := strings.Split(req.URL.Path, "/")[1:]
 	if (path[0] == "api") {
-		parsed_req := Request { cookies : req.Cookies() }
+		parsed_req := Request { cookies : req.Cookies(), req : req }
 		switch len(path) {
 		case 2:			// matches /api/:api
 			parsed_req.api = path[1]

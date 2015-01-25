@@ -71,8 +71,10 @@
 				    </tr>
 				</tbody>
 			    </table>
-			    <button class="btn btn-lg btn-primary"
-				    type="button">Upload</button>
+			    <div class="lead" id="error">
+			    </div>
+			    <input class="btn btn-lg btn-primary"
+				   type="file" name="upload-file" id="upload-file"/>
 			</div>
 		    </li>
 
@@ -82,5 +84,40 @@
 
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
+
+	<script>
+	 var xlf = document.getElementById('upload-file')
+	 function handleFile(e) {
+	     var files = e.target.files
+	     if (!files.length) {
+		 $('#error').text('Please select a file for uploading')
+		 return
+	     }
+
+	     var file = files[0]
+	     var reader = new FileReader()
+	     reader.onload = function(e) {
+		 var obj = [ { name : file.name, type : file.type,
+			       data : btoa(reader.result) } ]
+		 $.ajax({
+		     url: '/api/student/compsys723/upload',
+		     type: 'POST',
+		     data: JSON.stringify(obj),
+		     dataType : 'json',
+		     success: function() {
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Failed to upload file: ' + jqxhr.responseText)
+		     }
+		 });
+	     }
+	     reader.readAsBinaryString(file)
+	 }
+	 
+	 if(xlf.addEventListener) {
+	     xlf.addEventListener('change', handleFile, false)
+	 }
+
+	</script>
     </body>
 </html>
