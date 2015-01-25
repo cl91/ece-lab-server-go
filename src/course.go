@@ -423,6 +423,12 @@ func add_student_to_course(stu StudentInfo, course string, primary_course string
 	db.Hset(k, "email", stu.Email)
 	db.Sadd(k+":courses", primary_course)
 	db.Sadd("course:"+course+":students", stu.Id)
+	db.Sadd("students", stu.Id)
+	db.Hset("student-upi-to-id", stu.Upi, stu.Id)
+	pass, e := db.Hget(k, "pass")
+	if e != nil || pass == "" {
+		db.Hset(k, "pass", stu.Id)
+	}
 }
 
 func get_student_info(id string, db redis.Client) StudentInfo {
