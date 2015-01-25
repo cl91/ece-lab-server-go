@@ -69,7 +69,12 @@ func ParseUser(req Request) string {
 		user, _ := req.db.Hget("auth", auth)
 		user_auth, _ := req.db.Hget("user:"+user, "auth")
 		if auth == user_auth {
-			return user
+			return user, NonStudent
+		}
+		stu_id, _ := req.db.Hget("student-auth", auth)
+		stu_auth, _ := req.db.Hget("student:"+stu_id, "auth")
+		if auth == stu_auth {
+			return stu_id, Student
 		}
 	}
 	return ""
