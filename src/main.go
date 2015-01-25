@@ -15,6 +15,7 @@ type Request struct {
 	course string
 	primary_course string
 	user string
+	student string
 	body []byte
 	query map[string] []string
 	cookies []*http.Cookie

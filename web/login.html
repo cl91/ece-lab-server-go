@@ -53,6 +53,8 @@
 			     document.location = 'admin.html'
 			 } else if (data.type == 'admin') {
 			     document.location = 'course-coordinator.html'
+			 } else if (data.type == 'student') {
+			     document.location = 'student.html'
 			 } else {
 			     $('#error').show()
 			     $('#error').text('Login failed: unknown user type')

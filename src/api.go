@@ -17,6 +17,13 @@ func HandleMux(mux Mux, key string, req Request) Response {
 	}
 }
 
+type UserType int
+const (
+	Student UserType = iota
+	NonStudent
+	InvalidUser
+)
+
 func HandleApi(req Request) Response {
 	db, err := InitDb()
 	if err != nil {
@@ -25,7 +32,18 @@ func HandleApi(req Request) Response {
 	defer db.Quit()
 	req.db = db
 
-	req.user = ParseUser(req)
+	user, utype := ParseUser(req)
+	switch utype {
+	case Student:
+		req.student = user
+		req.user = ""
+	case NonStudent:
+		req.student = ""
+		req.user = user
+	case InvalidUser:
+		req.student = ""
+		req.user = ""
+	}
 	req.primary_course = ParsePrimaryCourse(req)
 
 	mux := make(Mux)
@@ -49,7 +67,7 @@ func InitDb() (redis.Client, error) {
         return redis.NewSynchClientWithSpec(spec)
 }
 
-func ParseUser(req Request) string {
+func ParseUser(req Request) (string, UserType) {
 	var auth string
 	if req.cookies != nil {
 		for _, cookie := range req.cookies {
@@ -77,7 +95,7 @@ func ParseUser(req Request) string {
 			return stu_id, Student
 		}
 	}
-	return ""
+	return "", InvalidUser
 }
 
 func ParsePrimaryCourse(req Request) string {
