@@ -23,6 +23,14 @@ type Request struct {
 	db redis.Client
 }
 
+func (r *Request) get_user() string {
+	if r.user != "" {
+		return r.user
+	} else {
+		return r.student
+	}
+}
+
 type Status int
 
 const (

@@ -94,7 +94,7 @@ type AdminInfo struct {
 }
 
 func get_admin_info(admin string, db redis.Client) (AdminInfo, error) {
-	courses, err := get_all_courses(admin, db)
+	courses, err := get_all_courses(admin, db, false)
 	if err != nil {
 		return AdminInfo {}, err
 	}

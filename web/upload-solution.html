@@ -42,42 +42,79 @@
 	<div class="container">
 	    <div class="jumbotron">
 		<div class="lead large-text text-center">Upload Your Solutions</div>
+		<h2 id="info"></h2>
+		<div id="uploads"></div>
 		<div class="lead" id="error"></div>
-		<div id="info"></div>
+		<input class="btn btn-lg btn-primary"
+		       type="file" name="upload-file" id="upload-file"/>
 	    </div>
 	</div>
-
+	
 	<script type="text/template" id="template">
-	    <table class="table table-stripped">
+	    <table class="table">
 		<thead>
-		    <td>Course</td>
-		    <td>Lab</td>
-		    <td>Upload</td>
+		    <td>Attempt</td>
+		    <td>File</td>
+		    <td>Marked</td>
+		    <td>Mark</td>
 		</thead>
 		<tbody>
-		    {{courses}}
-		    <tr>
-			<td>{{name}}</td>
-			<td>{{lab_name}}</td>
-			<td>
-			    <button class="btn btn-primary upload-button"
-				    data-course="{{primary_course}}" data-lab="{{lab_id}}">
-				Upload
-			    </button>
-			</td>
+		    <tr class="success">
+			<td>1</td>
+			<td><a href="#">upload.zip</a></td>
+			<td>Yes</td>
+			<td><a href="#">5 (Details)</a></td>
 		    </tr>
-		    {{/courses}}
-		    </div>
+		    <tr class="danger">
+			<td>2</td>
+			<td><a href="#">upload2.zip</a></td>
+			<td>No</td>
+			<td>0</td>
+		    </tr>
 		</tbody>
 	    </table>
 	</script>
 
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
-	<script src="js/markup.min.js"></script>
 	<script src="js/common.js"></script>
 
 	<script>
+	 var course = get_parameter_by_name("course")
+	 var lab_id = get_parameter_by_name("lab_id")
+
+	 var xlf = document.getElementById('upload-file')
+	 function handleFile(e) {
+	     var files = e.target.files
+	     if (!files.length) {
+		 $('#error').text('Please select a file for uploading')
+		 return
+	     }
+
+	     var file = files[0]
+	     var reader = new FileReader()
+	     reader.onload = function(e) {
+		 var obj = [ { name : file.name, type : file.type,
+			       data : btoa(reader.result) } ]
+		 $.ajax({
+		     url: '/api/student/'+ course + '/upload?id='+lab_id,
+		     type: 'POST',
+		     data: JSON.stringify(obj),
+		     success: function(data) {
+			 location.reload()
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Failed to upload file: ' + jqxhr.responseText)
+		     }
+		 });
+	     }
+	     reader.readAsBinaryString(file)
+	 }
+	 
+	 if(xlf.addEventListener) {
+	     xlf.addEventListener('change', handleFile, false)
+	 }
+
 	 $.ajax({
 	     url : 'api/course/get',
 	     type : 'POST',
@@ -85,27 +122,15 @@
 	     success : function(data) {
 		 obj = []
 		 for (var i = 0; i < data.length; i++) {
-		     var primary_course = data[i].name
-		     var name = get_course_fullname(data[i])
-		     for (var j = 0; j < data[i].lab_info.active_ids.length; j++) {
-			 var lab_id = data[i].lab_info.active_ids[j]
+		     if (course == data[i].name) {
+			 var name = get_course_fullname(data[i])
 			 var lab_name = data[i].lab_info.labs[lab_id].name
-			 obj[obj.length++] = { name : name.toUpperCase(),
-					       primary_course : primary_course,
-					       lab_id : lab_id,
-					       lab_name : lab_name
-			 }
+			 $('#info').text(name.toUpperCase() + ' - ' + lab_name)
 		     }
 		 }
-		 $('#info').html(Mark.up(get_template("template"), { courses : obj }))
-		 $('.upload-button').click(function() {
-		     var course = $(this).data("course")
-		     var lab_id = $(this).data("lab")
-		     document.location = "upload-solution.html?course=" + course + "&lab_id=" + lab_id
-		 })
 	     },
 	     error : function(jqxhr, status, error) {
-		 $('#error').text('Failed to get active lab list: ' + jqxhr.responseText)
+		 $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
 	     }
 	 })
 

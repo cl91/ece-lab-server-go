@@ -61,8 +61,12 @@ func get_course_info(name string, db redis.Client) CourseInfo {
 		Labinfo : get_lab_info(name, db) }
 }
 
-func get_all_courses(user string, db redis.Client) ([]CourseInfo, error) {
-	courses, err := db.Smembers("user:"+user+":primary-courses")
+func get_all_courses(user string, db redis.Client, is_student bool) ([]CourseInfo, error) {
+	prefix := "user:"
+	if is_student {
+		prefix = "student:"
+	}
+	courses, err := db.Smembers(prefix+user+":primary-courses")
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +79,7 @@ func get_all_courses(user string, db redis.Client) ([]CourseInfo, error) {
 
 // POST /course/get
 func GetCourseHandler(req Request) Response {
-	courses, err := get_all_courses(req.user, req.db)
+	courses, err := get_all_courses(req.get_user(), req.db, (req.user == ""))
 	if err != nil {
 		return Response { code : BadRequest,
 			msg : "Error getting course information" }
@@ -423,7 +427,8 @@ func add_student_to_course(stu StudentInfo, course string, primary_course string
 	db.Hset(k, "name", stu.Name)
 	db.Hset(k, "upi", stu.Upi)
 	db.Hset(k, "email", stu.Email)
-	db.Sadd(k+":courses", primary_course)
+	db.Sadd(k+":courses", course)
+	db.Sadd(k+":primary-courses", primary_course)
 	db.Sadd("course:"+course+":students", stu.Id)
 	db.Sadd("students", stu.Id)
 	db.Hset("student-upi-to-id", stu.Upi, stu.Id)
@@ -570,7 +575,7 @@ func is_access_allowed(req *Request) bool {
 	is_disabled_marker, _ := req.db.Sismember("course:"+course+":disabled-markers", user)
 
 	if req.ops == "get" {
-		// Admins and active markers can access /course/get
+		// Admins, markers, and students can access /course/get
 		return true
 	} else if req.ops == "get-labs" || req.ops == "get-student-list" {
 		// Admins and active markers can access

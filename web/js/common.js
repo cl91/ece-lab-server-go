@@ -5,6 +5,16 @@ function get_parameter_by_name(name) {
     return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
+function get_course_fullname(course) {
+    var name = course.name
+    if (course.aliases) {
+	for (var i = 0; i < course.aliases.length; i++) {
+	    name += "/" + course.aliases[i]
+	}
+    }
+    return name
+}
+
 function get_max_array(a) {
     return Math.max.apply(null, a);
 }

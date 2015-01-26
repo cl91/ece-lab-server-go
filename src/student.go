@@ -22,9 +22,14 @@ type UploadFile struct {
 	Data []byte `json:"data"`
 }
 
-// POST /student/:course/upload
+// POST /student/:course/upload?id=lab_id
 // DATA file in multipart form
 func UploadCodeHandler(req Request) Response {
+	idv, ok := req.query["id"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need lab id" }
+	}
+	lab_id := idv[0]
 	list := make([]UploadFile, 0)
 	if err := json.Unmarshal(req.body, &list); err != nil || len(list) == 0 {
 		return Response { code : BadRequest,
@@ -32,7 +37,13 @@ func UploadCodeHandler(req Request) Response {
 	}
 
 	// open destination
-	outfile, err := os.Create("./uploaded/" + list[0].Name)
+	dir := "./uploaded/" + req.course + "/" + lab_id + "/" + req.student + "/"
+	err := os.MkdirAll(dir, os.ModeDir | 0755)
+	if err != nil {
+		return Response { code : ServerError,
+			msg : "Failed to create directory: " + err.Error() }
+	}
+	outfile, err := os.Create(dir + list[0].Name)
 	if err != nil {
 		return Response { code : ServerError,
 			msg : "Failed to open outfile: " + err.Error() }
