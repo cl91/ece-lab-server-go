@@ -27,7 +27,7 @@
 		</div>
 		<div id="navbar" class="navbar-collapse collapse">
 		    <ul class="nav navbar-nav">
-			<li class="active"><a href="student.html">Home</a></li>
+			<li><a href="student.html">Home</a></li>
 		    </ul>
 		    <ul class="nav navbar-nav navbar-right">
 			<li><a href="login.html">Logout</a></li>
@@ -42,6 +42,7 @@
 	<div class="container">
 	    <div class="jumbotron">
 		<div class="lead large-text text-center">Upload Your Solutions</div>
+		<div class="lead"><strong>Make sure you upload your solution before calling the TA to mark it. You won't be able to upload once TA has marked you off.</strong></div>
 		<h2 id="info"></h2>
 		<div id="uploads"></div>
 		<div class="lead" id="error"></div>
@@ -53,23 +54,13 @@
 	<script type="text/template" id="template">
 	    <table class="table">
 		<thead>
-		    <td>Attempt</td>
-		    <td>File</td>
-		    <td>Marked</td>
+		    <td>Uploaded?</td>
 		    <td>Mark</td>
 		</thead>
 		<tbody>
-		    <tr class="success">
-			<td>1</td>
-			<td><a href="#">upload.zip</a></td>
-			<td>Yes</td>
-			<td><a href="#">5 (Details)</a></td>
-		    </tr>
-		    <tr class="danger">
-			<td>2</td>
-			<td><a href="#">upload2.zip</a></td>
-			<td>No</td>
-			<td>0</td>
+		    <tr>
+			<td>{{uploaded}}</td>
+			<td>{{texts}}<p>{{.}}</p>{{/texts}}</td>
 		    </tr>
 		</tbody>
 	    </table>
@@ -78,8 +69,11 @@
 	<script src="js/jquery.min.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/common.js"></script>
+	<script src="js/markup.min.js"></script>
 
 	<script>
+	 $('#upload-file').hide()
+
 	 var course = get_parameter_by_name("course")
 	 var lab_id = get_parameter_by_name("lab_id")
 
@@ -120,14 +114,41 @@
 	     type : 'POST',
 	     dataType : 'json',
 	     success : function(data) {
-		 obj = []
+		 var lab_info
 		 for (var i = 0; i < data.length; i++) {
 		     if (course == data[i].name) {
 			 var name = get_course_fullname(data[i])
-			 var lab_name = data[i].lab_info.labs[lab_id].name
+			 lab_info = data[i].lab_info.labs[lab_id]
+			 var lab_name = lab_info.name
 			 $('#info').text(name.toUpperCase() + ' - ' + lab_name)
+			 break
 		     }
 		 }
+		 $.ajax({
+		     url : 'api/student/'+course+'/get-history?id='+lab_id,
+		     type : 'POST',
+		     dataType : 'json',
+		     success : function(data) {
+			 var marks = []
+			 console.log(data)
+			 if (data.mark.length == 0) {
+			     $('#upload-file').show()
+			     $('#uploads').html(Mark.up(get_template('template'),
+							{ uploaded : data.uploaded ? "Yes" : "No",
+							  texts : ["Not marked"] }))
+			 } else {
+			     marks[0] = { mark : data.mark[0].mark, date : "", marker : "" }
+			     lab_info.mtype = lab_info.marking
+			     var text_marks = get_textual_marks(marks, lab_info)
+			     $('#uploads').html(Mark.up(get_template('template'),
+							{ uploaded : data.uploaded ? "Yes" : "No",
+							  texts : text_marks[0].texts }))
+			 }
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Failed to get marks: ' + jqxhr.responseText)
+		     }
+		 })
 	     },
 	     error : function(jqxhr, status, error) {
 		 $('#error').text('Failed to get lab info: ' + jqxhr.responseText)

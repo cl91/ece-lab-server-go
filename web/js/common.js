@@ -33,3 +33,28 @@ function is_active_marking(ids, id) {
     }
     return "No"
 }
+
+function get_textual_marks(marks, lab) {
+    var ret = []
+    for (var i = 0; i < marks.length; i++) {
+	mark = marks[i].mark
+	if (!mark) {
+	    continue
+	}
+	texts = []
+	if (lab.mtype == 'criteria') {
+	    for (var j = 0; j < mark.length; j++) {
+		var symb = mark[j] == 0 ? '&#10007;' : '&#10004;'
+		texts[j] = symb + ' ' + lab.criteria[j].text
+	    }
+	} else if (lab.mtype == 'number') {
+	    texts[0] = String(mark[0])
+	} else if (lab.mtype == 'attendance') {
+	    var symb = mark[0] == 0 ? '&#10007;' : '&#10004;'
+	    texts[0] = symb + ' Student attended lab.'
+	}
+	ret[i] = { texts : texts, date : marks[i].date, marker : marks[i].marker,
+		     "class" : i == 0 ? "success" : "warning" }
+    }
+    return ret
+}

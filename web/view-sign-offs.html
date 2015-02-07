@@ -169,27 +169,7 @@
 		 dataType : 'json',
 		 success : function(data) {
 		     var template = get_template("sign-offs-template")
-		     var marks = []
-		     for (var i = 0; i < data.length; i++) {
-			 mark = data[i].mark
-			 if (!mark) {
-			     continue
-			 }
-			 texts = []
-			 if (lab.mtype == 'criteria') {
-			     for (var j = 0; j < mark.length; j++) {
-				 var symb = mark[j] == 0 ? '&#10007;' : '&#10004;'
-				 texts[j] = symb + ' ' + lab.criteria[j].text
-			     }
-			 } else if (lab.mtype == 'number') {
-			     texts[0] = String(mark[0])
-			 } else if (lab.mtype == 'attendance') {
-			     var symb = mark[0] == 0 ? '&#10007;' : '&#10004;'
-			     texts[0] = symb + ' Student attended lab.'
-			 }
-			 marks[i] = { texts : texts, date : data[i].date, marker : data[i].marker,
-				      class : i == 0 ? "success" : "warning" }
-		     }
+		     marks = get_textual_marks(data, lab)
 		     $('#sign-offs').html(Mark.up(template, { marks : marks }))
 		 },
 		 error : function(jqxhr, status, error) {
