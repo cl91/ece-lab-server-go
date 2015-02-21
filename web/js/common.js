@@ -58,3 +58,9 @@ function get_textual_marks(marks, lab) {
     }
     return ret
 }
+
+String.prototype.addSlashes = function() 
+{ 
+   //no need to do (str+'') anymore because 'this' can only be a string
+   return this.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+}

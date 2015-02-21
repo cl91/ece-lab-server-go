@@ -128,12 +128,12 @@
 			 type : 'POST',
 			 dataType : 'json',
 			 success : function(data) {
-			     var output = "Name, UPI, AUID, E-mail, Mark\n"
+			     var output = '"Name", "UPI", "AUID", "E-mail", "Mark"\n'
 			     for (var i = 0; i < data.length; i++) {
-				 output += '"' + data[i].name + '",'
-				 output += '"' + data[i].upi + '",'
-				 output += '"' + data[i].id + '",'
-				 output += '"' + data[i].email + '",'
+				 output += '"' + data[i].name.addSlashes() + '",'
+				 output += '"' + data[i].upi.addSlashes() + '",'
+				 output += '"' + data[i].id.addSlashes() + '",'
+				 output += '"' + data[i].email.addSlashes() + '",'
 				 output += data[i].total_mark + '\n'
 			     }
 			     var blob = new Blob([output], {type: "text/csv;charset=utf-8"});

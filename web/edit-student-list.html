@@ -69,6 +69,7 @@
 	<script src="js/markup.min.js"></script>
 	<script src="js/xlsx.core.min.js"></script>
 	<script src="js/common.js"></script>
+	<script src="js/papaparse.min.js"></script>
 
 	<script id="list-template" type="text/template">
 	    <table class="table table-striped">
@@ -127,7 +128,7 @@
 	 function to_json(workbook) {
 	     var result
 	     workbook.SheetNames.forEach(function(sheetName) {
-	 var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName])
+		 var roa = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName])
 		 if(roa.length > 0){
 		     result = roa
 		 }
@@ -230,18 +231,42 @@
 	     var file = files[0]
 	     var reader = new FileReader()
 	     var name = file.name
-	     reader.onload = function(e) {
-		 var data = e.target.result
-		 var wb
-		 if(rABS) {
-		     wb = XLSX.read(data, {type: 'binary'})
-		 } else {
-		     var arr = fixdata(data)
-		     wb = XLSX.read(btoa(arr), {type: 'base64'})
+	     if (file.type.indexOf('csv') > -1) {
+		 reader.onload = function(e) {
+		     var data = e.target.result
+		     var parsed = Papa.parse(data)
+		     if (parsed.errors.length > 0) {
+			 $('#error').text('Input is not a valid csv file')
+		     } else {
+			 var obj = []
+			 for (var i = 1; i < parsed.data.length; i++) {
+			     var o = {}
+			     for (var j = 0; j < parsed.data[i].length; j++) {
+				 var header = parsed.data[0][j].replace(/ /g, "")
+							.replace(/\"/g, '').replace(/'/g, "")
+				 o[header] = parsed.data[i][j]
+			     }
+			     obj[i-1] = o
+			 }
+			 console.log(obj)
+			 show_student_list(obj)
+			 enable_submit_button(obj)
+		     }
 		 }
-		 var obj = to_json(wb)
-		 show_student_list(obj)
-		 enable_submit_button(obj)
+	     } else {
+		 reader.onload = function(e) {
+		     var data = e.target.result
+		     var wb
+		     if(rABS) {
+			 wb = XLSX.read(data, {type: 'binary'})
+		     } else {
+			 var arr = fixdata(data)
+			 wb = XLSX.read(btoa(arr), {type: 'base64'})
+		     }
+		     var obj = to_json(wb)
+		     show_student_list(obj)
+		     enable_submit_button(obj)
+		 }
 	     }
 	     if(rABS) reader.readAsBinaryString(file)
 	     else reader.readAsArrayBuffer(file)
