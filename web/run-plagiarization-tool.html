@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>ECE Lab Management System</title>
+
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/common.css" rel="stylesheet">
+    </head>
+
+    <body>
+	<nav class="navbar navbar-default navbar-static-top" role="navigation">
+	    <div class="container">
+		<div class="navbar-header">
+		    <button type="button" class="navbar-toggle collapsed"
+			    data-toggle="collapse" data-target="#navbar"
+			    aria-expanded="false" aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		    </button>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+		    <ul class="nav navbar-nav">
+			<li><a href="course-coordinator.html">Home</a></li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+			<li><a href="login.html">Logout</a></li>
+		    </ul>
+		</div>
+	    </div>
+	</nav>
+
+	<div class="container">
+
+	    <div class="jumbotron">
+		<div class="lead large-text text-center">Run Plagiarization Detection Tool</div>
+		<form class="form-signin text-center" role="form" id="runtool">
+		    <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-2">
+			    <label for="name">Email</label>
+			</div>
+			<div class="col-md-5">
+			    <input type="text" id="email" class="form-control" name="email" required autofocus>
+			</div>
+		    </div>
+
+		    <div class="row small" style="margin-top:10px">
+			<div class="col-md-3"></div>
+			<div class="text-left col-md-6">
+			    Plagiarization detection tool takes about 15 minutes to run.
+			    The results will be emailed to the address above. Please check your spam box.
+			</div>
+			<div class="col-md-3"></div>
+		    </div>
+
+		    <div class="row">
+			<div class="col-md-2"></div>
+			<div class="col-md-2">
+			    <label for="name">Filter</label>
+			</div>
+			<div class="col-md-5">
+			    <input type="text" id="filter" class="form-control" name="filter" required autofocus>
+			</div>
+		    </div>
+
+		    <div class="row small" style="margin-top:10px">
+			<div class="col-md-3"></div>
+			<div class="text-left col-md-6">
+			    Direct the tool to run plagiarization detection on the specified files only.
+			    Any regular expressions supported by egrep are supported. For example,
+			    wildcard (*) is supported; you can use the pipe symbol (|) to separate files.
+			    Examples: main.cc, *.java
+			</div>
+			<div class="col-md-3"></div>
+		    </div>
+
+		    <label id="error"></label>
+		    <div class="row">
+			<div class="col-md-6"></div>
+			<div class="col-md-2">
+			    <button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+			</div>
+		    </div>
+		</form>
+	    </div>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/jquery.form.js"></script>
+	<script src="js/common.js"></script>
+
+	<script>
+	 var course = get_parameter_by_name('course')
+	 var lab = get_parameter_by_name('lab')
+
+	 $('#runtool').ajaxForm({
+	     beforeSubmit : function showRequest(form_data) {
+		 var query = $.param(form_data)
+		 var url = 'api/course/' + course + '/run-script?lab=' + lab + '&' + query
+		 $('#error').text("Please wait. Don't close the browser.")
+		 $.ajax({
+		     url : url,
+		     type : 'POST',
+		     success : function(data, status, jqxhr) {
+			 $('#error').text('Server replied: ' + jqxhr.responseText)
+		     },
+		     error : function(jqxhr, status, error) {
+			 $('#error').text('Server replied error: ' + jqxhr.responseText)
+		     }
+		 })
+		 return false
+	     },
+	 })
+	</script>
+    </body>
+</html>

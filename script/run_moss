@@ -1,0 +1,22 @@
+#!/bin/bash
+
+course="$1"
+lab="$2"
+email="$3"
+filter="$4"
+
+tmp="/tmp/moss_tmp"
+
+rm -rf $tmp
+cp -r uploaded/${course}/${lab} $tmp
+oldpwd=$PWD
+cd $tmp
+$oldpwd/script/extract_files -x $filter
+mossfiles=$($oldpwd/script/extract_files -m $filter)
+link=$($oldpwd/script/moss -d $mossfiles | grep 'http')
+if [[ $link ]]; then
+	wget $link -O - -o /dev/null | mail -s "Plagiarism Detection Result $course Lab $lab" $email
+	echo Success. Browse to the link $link to view the results. A copy has also been emailed to you.
+else
+	echo Something went wrong. Please tell whoever is in charge of this.
+fi

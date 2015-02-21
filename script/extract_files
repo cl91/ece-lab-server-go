@@ -1,0 +1,119 @@
+#!/bin/bash
+
+CD=$(pwd)
+#PREFIX=""    
+PREFIX="__EXTRACTED__"
+WARNING="**WARNING_"
+while getopts ":x:p:dm:" opt; do
+	case $opt in
+		d)	# Cleans directories created by this script in previous runs
+			for file in *
+			do
+			    if [[ "$file" == $PREFIX* || "$file" == $WARNING*  ]] ; then
+				if  test -d "$file" ; then
+# 				    echo $file
+				    rm -fr "$file"
+				fi
+			    fi
+			done
+			exit 0
+			;;
+		m)	# Prints submissions ready to copy/paste for Moss script, in form of
+			# 		__EXTRACTED__upi001/*.py  __EXTRACTED__upi002/*.py __EXTRACTED__upi003/*.py  __EXTRACTED__upi004/*.py 
+			# 
+			filter=$OPTARG
+			COUNT=0
+			STR=""
+			for dir in *
+			do
+			    if [[ "$dir" == $PREFIX* ]] ; then
+				if  test -d "$dir" ; then
+				    for i in $(ls $dir | egrep "$filter"); do
+					STR="$STR $dir/$i"
+				    done
+				    ((COUNT++))
+				fi
+			    fi
+			done
+			echo "$STR"
+			exit 0
+			;;
+		p)
+			PREFIX=$OPTARG
+			;;
+		x)
+			filter=$OPTARG
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG" >&2
+			exit 1
+			;;
+		:)
+			echo "Option -$OPTARG requires an argument." >&2
+			exit 1
+			;;
+	esac
+done
+COUNT=1
+#for file in $CD/*.zip  $CD/*.tar   # assuming zip and tar files in current directory
+for file in $CD/*/*.zip  $CD/*/*.tar  # assuming each zip file is inside a folder with student's UPI
+do
+	if  test -f "$file" ; then
+			
+		# directory name is the folder (not file), in the case UPI is in folder name
+		UPI_DIR="$(dirname "$file")"
+		UPI=$(basename "$UPI_DIR")
+#		echo $UPI
+		
+		BASE="$(basename "$file")"
+		BASE=$(echo ${BASE// /})
+
+		# use this if getting the UPI from the file (e.g. the UPI is in the zip/tar file names
+#		TMP_DIR="$PREFIX$BASE"
+
+		# use this if getting UPI from the folder in which the zip files are contained
+		TMP_DIR="$PREFIX$UPI"
+
+		mkdir -p "$TMP_DIR"
+# 		echo "$TMP_DIR"
+		
+		# TODO 
+		# TODO   For the extractions, don't want to keep the inner directory structure.. 
+		# TODO 
+		
+		if [ ${BASE: -4} == ".tar" ]
+		then
+		    tar --wildcards -xf "$file" -C "$TMP_DIR" "$filter"
+		else
+		    unzip -j -o -q "$file" "$filter" -d "$TMP_DIR"
+		fi
+		EXIT=$?
+		if test $EXIT -ne 0 ; then  	# TODO Make sure that this test also works for tar, not just unzip (i.e. if didn't find files in tar file)
+		    if test $EXIT -eq 11 ; then
+			echo "** WARNING $COUNT: No files with extension *.$EXT were found inside \"$BASE\" $WARNING" ; echo
+		    else
+			echo "** WARNING $COUNT: Some problem with the following file: \"$BASE\" $WARNING" ; echo
+		    fi
+		    mv "$TMP_DIR" "$WARNING$COUNT**$BASE"
+# 		    mv "$BASE" "$WARNING$COUNT**$BASE"
+		    ((COUNT++))
+		else
+		    find "$TMP_DIR" -name '* *' | while read f;
+		    do
+			target=`echo "$f" | sed 's/ /_/g'`;
+# 			echo "Renaming '$f' to '$target'";
+			mv "$f" "$target";
+		    done;
+
+		    for i in `find  "$TMP_DIR" -type f`
+		    do
+			if [[ "$i" != "$TMP_DIR/`basename $i`" ]] ; then	
+			    mv "$i" "$TMP_DIR/`basename $i`"
+# 			    echo "MOVE $i to $TMP_DIR/`basename $i`"	
+			fi
+		    done
+		fi
+	fi
+done
+
+

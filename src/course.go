@@ -3,6 +3,8 @@ package main
 import (
 	"time"
 	"strconv"
+	"os"
+	"os/exec"
 	"encoding/json"
 	"./redis"
 	"./mapset"
@@ -26,6 +28,7 @@ func CourseHandler(req Request) Response {
 	mux["edit-lab"] = EditLabHandler
 	mux["update-student-list"] = UpdateStudentListHandler
 	mux["get-student-list"] = GetStudentListHandler
+	mux["run-script"] = RunScriptHandler
 	return HandleMux(mux, req.ops, req)
 }
 
@@ -566,6 +569,36 @@ func GetStudentListHandler(req Request) Response {
 			msg : "Error marshalling json object: " + err.Error() }
 	}
 	return Response { msg : string(reply) }
+}
+
+// POST /course/:course/run-script?lab=lab_id&email=email@email[&filter=main.cc]
+func RunScriptHandler(req Request) Response {
+	course := req.course
+	if course == "" {
+		return Response { code : BadRequest, msg : "Need course name" }
+	}
+	labv, ok := req.query["lab"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need lab id" }
+	}
+	lab := labv[0]
+	emailv, ok := req.query["email"]
+	if !ok {
+		return Response { code : BadRequest, msg : "Need email" }
+	}
+	email := emailv[0]
+	filter := ""
+	filterv, ok := req.query["filter"]
+	if ok {
+		filter = filterv[0]
+	}
+	pwd, _ := os.Getwd()
+	cmd := pwd + "/script/run_moss" + " " + course + " " + lab + " " + email + " \"" + filter + "\""
+	out, err := exec.Command("bash", "-c", cmd).CombinedOutput()
+	if err != nil {
+		return Response { code : ServerError, msg : err.Error() + ": " + string(out) }
+	}
+	return Response { msg : string(out) }
 }
 
 func is_access_allowed(req *Request) bool {

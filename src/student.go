@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"strconv"
+	"./redis"
 )
 
 func StudentHandler(req Request) Response {
@@ -47,6 +48,10 @@ func GetHistoryHandler(req Request) Response {
 	return Response { msg : string(reply) }
 }
 
+func get_student_upi(student string, db redis.Client) string {
+	return get_student_info(student, db).Upi
+}
+
 // POST /student/:course/upload?id=lab_id
 // DATA file in multipart form
 func UploadCodeHandler(req Request) Response {
@@ -62,7 +67,8 @@ func UploadCodeHandler(req Request) Response {
 	}
 
 	// open destination
-	dir := "./uploaded/" + req.course + "/" + lab_id + "/" + req.student + "/"
+	dir := "./uploaded/" + req.course + "/" + lab_id + "/" +
+		get_student_upi(req.student, req.db) + "/"
 	err := os.MkdirAll(dir, os.ModeDir | 0755)
 	if err != nil {
 		return Response { code : ServerError,
