@@ -52,7 +52,7 @@
 			    <td>Is Marking Active</td>
 			    <td>Marking</td>
 			    <td>Export Marks</td>
-			    <td>Run Plagiarization Detection Tool</td>
+			    <td>Run Plagiarism Detection Tool</td>
 			</thead>
 		    </table>
 		</div>
@@ -71,7 +71,7 @@
 		<td><button class="btn btn-primary export"
 			    data-lab="{{id}}">Export</button></td>
 		<td><button class="btn btn-primary runtool"
-			    data-lab="{{id}}">Run Plagiarization Detection Tool</button></td>
+			    data-lab="{{id}}">Run Plagiarism Detection Tool</button></td>
 	    </tr>
 	</script>
 
@@ -149,7 +149,7 @@
 		 })
 		 $('.runtool').click(function() {
 		     var lab = $(this).data('lab')
-		     document.location = 'run-plagiarization-tool.html?course=' + course +
+		     document.location = 'run-plagiarism-tool.html?course=' + course +
 					     '&lab=' + lab
 		 })
 	     },
