@@ -51,6 +51,7 @@
 			    <td>Marking Ends</td>
 			    <td>Is Marking Active</td>
 			    <td>Marking</td>
+			    <td>Export Marks</td>
 			</thead>
 		    </table>
 		</div>
@@ -59,13 +60,15 @@
 	</div>
 
 	<script id="labs-template" type="text/template">
-	    <tr class="clickable" data-id="{{id}}">
-		<td>{{name}}</td>
-		<td>Week {{week}}</td>
-		<td>{{marking_start}}</td>
-		<td>{{marking_end}}</td>
-		<td>{{active}}</td>
-		<td>{{marking}}</td>
+	    <tr data-id="{{id}}">
+		<td class="clickable">{{name}}</td>
+		<td class="clickable">Week {{week}}</td>
+		<td class="clickable">{{marking_start}}</td>
+		<td class="clickable">{{marking_end}}</td>
+		<td class="clickable">{{active}}</td>
+		<td class="clickable">{{marking}}</td>
+		<td><button class="btn btn-primary export"
+			    data-lab="{{id}}">Export</button></td>
 	    </tr>
 	</script>
 
@@ -73,6 +76,8 @@
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/markup.min.js"></script>
 	<script src="js/common.js"></script>
+	<script src="js/FileSaver.min.js"></script>
+	<script src="js/Blob.js"></script>
 
 	<script>
 	 var course = get_parameter_by_name('course')
@@ -116,7 +121,29 @@
 					     '&lab=' + lab_id
 		     }
 		 })
-			 
+		 $('.export').click(function() {
+		     var lab = $(this).data('lab')
+		     $.ajax({
+			 url : 'api/course/'+course+'/get-student-list?lab='+lab,
+			 type : 'POST',
+			 dataType : 'json',
+			 success : function(data) {
+			     var output = "Name, UPI, AUID, E-mail, Mark\n"
+			     for (var i = 0; i < data.length; i++) {
+				 output += '"' + data[i].name + '",'
+				 output += '"' + data[i].upi + '",'
+				 output += '"' + data[i].id + '",'
+				 output += '"' + data[i].email + '",'
+				 output += data[i].total_mark + '\n'
+			     }
+			     var blob = new Blob([output], {type: "text/csv;charset=utf-8"});
+			     saveAs(blob, course.toUpperCase() + "Lab" + lab + ".csv");
+			 },
+			 error : function(jqxhr, status, error) {
+			     $('#error').text('Failed to get lab info: ' + jqxhr.responseText)
+			 }
+		     })
+		 })
 	     },
 	     error : function(jqxhr, status, error) {
 		 $('#error').text('Failed to get lab info: ' + jqxhr.responseText)

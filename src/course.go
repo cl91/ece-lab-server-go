@@ -429,7 +429,7 @@ func add_student_to_course(stu StudentInfo, course string, primary_course string
 	db.Hset(k, "email", stu.Email)
 	db.Sadd(k+":courses", course)
 	db.Sadd(k+":primary-courses", primary_course)
-	db.Sadd("course:"+course+":students", stu.Id)
+	db.Rpush("course:"+course+":students", stu.Id)
 	db.Sadd("students", stu.Id)
 	db.Hset("student-upi-to-id", stu.Upi, stu.Id)
 	pass, e := db.Hget(k, "pass")
@@ -468,7 +468,7 @@ func get_student_mark_for_lab(id string, course string, lab string, db redis.Cli
 
 func get_student_ids(course string, merge bool, db redis.Client) (ids []string, err error) {
 	if !merge {
-		return db.Smembers("course:"+course+":students")
+		return db.Lrange("course:"+course+":students", 0, -1)
 	} else {
 		aliases, err := get_aliases(course, db)
 		if err != nil {
@@ -517,6 +517,7 @@ func UpdateStudentListHandler(req Request) Response {
 		return Response { code : BadRequest,
 			msg : "Failed to parse json input: " + err.Error() }
 	}
+	req.db.Del("course:"+course+":students")
 	for _, v := range list {
 		if v.Name == "" || v.Upi == "" || v.Id == "" {
 			continue
